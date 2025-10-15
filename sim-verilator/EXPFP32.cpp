@@ -304,9 +304,9 @@ static void test_valid_range_cases() {
       pass++;
     else {
       fail++;
-
-      printf("%+13.6e %+13.6e %+13.6e %13.6e\n", in.f, (float)g, (float)h, err);
     }
+
+    printf("%+13.6e %+13.6e %+13.6e %13.6e\n", in.f, (float)g, (float)h, err);
     total_err += err;
     if (err > max_err)
       max_err = err;
