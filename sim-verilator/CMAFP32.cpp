@@ -1,5 +1,6 @@
-#include <VMULFP32.h>
+#include <VCMAFP32.h>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -10,7 +11,7 @@
 
 static VerilatedContext *contextp = NULL;
 static VerilatedFstC *tfp = NULL;
-static VMULFP32 *top = NULL;
+static VCMAFP32 *top = NULL;
 
 static uint64_t cycle_count = 0;
 
@@ -42,7 +43,7 @@ void reset(int n) {
 
 void sim_init() {
   contextp = new VerilatedContext;
-  top = new VMULFP32{contextp};
+  top = new VCMAFP32{contextp};
 #ifdef CONFIG_WAVE_TRACE
   tfp = new VerilatedFstC;
   contextp->traceEverOn(true);
@@ -63,71 +64,80 @@ void sim_exit() {
 
 static void test_random_cases() {
   const int N = 100000;
-  const int PIPE_DELAY = 3 - 1;
+  const int PIPE_DELAY = 5 - 1;
 
   int pass = 0, fail = 0;
   double total_err = 0.0, max_err = 0.0;
 
   float *vin1 = (float *)malloc(sizeof(float) * N);
   float *vin2 = (float *)malloc(sizeof(float) * N);
+  float *vin3 = (float *)malloc(sizeof(float) * N);
   float *golden = (float *)malloc(sizeof(float) * N);
   float *vout = (float *)malloc(sizeof(float) * N);
 
   for (int i = 0; i < N; i++) {
     float a = ((float)rand() / RAND_MAX) * 200.0f - 100.0f;
     float b = ((float)rand() / RAND_MAX) * 200.0f - 100.0f;
+    float c = ((float)rand() / RAND_MAX) * 200.0f - 100.0f;
     vin1[i] = a;
     vin2[i] = b;
-    golden[i] = a * b;
+    vin3[i] = c;
+    golden[i] = a * b + c;
   }
 
-  printf("=== Random MUL Tests ===\n");
-  printf("%13s %13s %13s %13s %13s\n", "InputA", "InputB", "Golden", "Hardware",
-         "Error");
+  printf("=== Random CMA Tests ===\n");
+  printf("%13s %13s %13s %13s %13s %13s\n", "InputA", "InputB", "InputC",
+         "Golden", "Hardware", "Error");
   printf("---------------------------------------------------------------------"
-         "-----\n");
+         "----------------\n");
 
-  for (int i = 0; i < N + PIPE_DELAY; i++) {
-    if (i < N) {
+  for (int cycle = 0; cycle < N + PIPE_DELAY; cycle++) {
+    if (cycle < N) {
       union {
         float f;
         uint32_t u;
-      } a, b;
-      a.f = vin1[i];
-      b.f = vin2[i];
-      top->io_in_in1 = a.u;
-      top->io_in_in2 = b.u;
+      } a, b, c;
+      a.f = vin1[cycle];
+      b.f = vin2[cycle];
+      c.f = vin3[cycle];
+      top->io_in_a = a.u;
+      top->io_in_b = b.u;
+      top->io_in_c = c.u;
       top->io_in_rm = 0;
     }
 
     single_cycle();
 
-    if (i >= PIPE_DELAY) {
-      int idx = i - PIPE_DELAY;
+    int out_idx = cycle - PIPE_DELAY;
+    if (out_idx >= 0 && out_idx < N) {
       union {
         float f;
         uint32_t u;
       } y;
       y.u = top->io_out_out;
-      vout[idx] = y.f;
+      vout[out_idx] = y.f;
 
-      double g = (double)golden[idx];
-      double h = (double)vout[idx];
+      double g = (double)golden[out_idx];
+      double h = (double)vout[out_idx];
       double denom = (g == 0.0 ? 1.0 : fabs(g));
       double err = fabs(h - g) / denom;
 
       total_err += err;
       if (err < 1e-6)
         pass++;
-      else
+      else {
         fail++;
+
+        printf("%+13.6e %+13.6e %+13.6e %+13.6e %+13.6e %13.6e\n",
+               vin1[out_idx], vin2[out_idx], vin3[out_idx], golden[out_idx],
+               vout[out_idx], err);
+      }
+
       if (err > max_err)
         max_err = err;
-
-      printf("%+13.6e %+13.6e %+13.6e %+13.6e %13.6e\n", vin1[idx], vin2[idx],
-             golden[idx], vout[idx], err);
     }
   }
+
   printf("\nTotal=%d, Pass=%d (%.2f%%), Fail=%d (%.2f%%)\n", N, pass,
          (pass * 100.0 / N), fail, (fail * 100.0 / N));
   printf("AvgErr=%e, MaxErr=%e\n", total_err / N, max_err);
@@ -135,12 +145,13 @@ static void test_random_cases() {
 
   free(vin1);
   free(vin2);
+  free(vin3);
   free(golden);
   free(vout);
 }
 
 int main() {
-  printf("Initializing MUL simulation...\n\n");
+  printf("Initializing CMA simulation...\n\n");
   sim_init();
   srand(time(NULL));
 

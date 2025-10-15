@@ -1,8 +1,9 @@
 VERILATOR = verilator
 VERILATOR_FLAGS = -MMD --build -cc --x-assign fast --x-initial fast --noassert --quiet-exit --trace --trace-fst
 
-# TOPNAME = ADDFP32
+# TOPNAME = CMAFP32
 # TOPNAME = MULFP32
+# TOPNAME = EXPFP32MainPath
 TOPNAME = EXPFP32
 
 BUILD_DIR = build

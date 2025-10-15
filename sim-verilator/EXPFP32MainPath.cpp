@@ -1,6 +1,5 @@
-#include <VADDFP32.h>
+#include <VEXPFP32MainPath.h>
 #include <cmath>
-#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -11,7 +10,7 @@
 
 static VerilatedContext *contextp = NULL;
 static VerilatedFstC *tfp = NULL;
-static VADDFP32 *top = NULL;
+static VEXPFP32MainPath *top = NULL;
 
 static uint64_t cycle_count = 0;
 
@@ -31,6 +30,7 @@ void single_cycle() {
   tfp->dump(contextp->time());
   contextp->timeInc(1);
 #endif
+
   cycle_count++;
 }
 
@@ -43,7 +43,7 @@ void reset(int n) {
 
 void sim_init() {
   contextp = new VerilatedContext;
-  top = new VADDFP32{contextp};
+  top = new VEXPFP32MainPath{contextp};
 #ifdef CONFIG_WAVE_TRACE
   tfp = new VerilatedFstC;
   contextp->traceEverOn(true);
@@ -64,94 +64,77 @@ void sim_exit() {
 
 static void test_random_cases() {
   const int N = 100000;
+  const int PIPE_DELAY = 18 - 1;
+
   int pass = 0, fail = 0;
   double total_err = 0.0, max_err = 0.0;
 
-  float *vin1 = (float *)malloc(sizeof(float) * N);
-  float *vin2 = (float *)malloc(sizeof(float) * N);
+  float *vin = (float *)malloc(sizeof(float) * N);
   float *golden = (float *)malloc(sizeof(float) * N);
   float *vout = (float *)malloc(sizeof(float) * N);
 
   for (int i = 0; i < N; i++) {
-    float a = ((float)rand() / RAND_MAX) * 200.0f - 100.0f;
-    float b = ((float)rand() / RAND_MAX) * 200.0f - 100.0f;
-    vin1[i] = a;
-    vin2[i] = b;
-    golden[i] = a + b;
+    float in = ((float)rand() / RAND_MAX) * 100.0f - 50.0f;
+    vin[i] = in;
+    golden[i] = expf(in);
   }
 
-  printf("=== Random ADD Tests ===\n");
-  printf("%13s %13s %13s %13s %13s\n", "InputA", "InputB", "Golden", "Hardware",
-         "Error");
+  printf("=== Random EXP Tests ===\n");
+  printf("%13s %13s %13s %13s\n", "Input", "Golden", "Hardware", "Error");
   printf("---------------------------------------------------------------------"
          "-----\n");
 
-  int issued = 0;
-  int received = 0;
-
-  top->io_out_ready = 1;
-  top->io_in_valid = 0;
-
-  while (received < N) {
-    if (issued < N && top->io_in_ready) {
+  for (int i = 0; i < N + PIPE_DELAY; i++) {
+    if (i < N) {
       union {
         float f;
         uint32_t u;
-      } a, b;
-      a.f = vin1[issued];
-      b.f = vin2[issued];
-      top->io_in_bits_in1 = a.u;
-      top->io_in_bits_in2 = b.u;
-      top->io_in_valid = 1;
-      issued++;
-    } else {
-      top->io_in_valid = 0;
+      } a;
+      a.f = vin[i];
+      top->io_in_in = a.u;
+      top->io_in_rm = 0;
     }
 
     single_cycle();
 
-    if (top->io_out_valid) {
+    if (i >= PIPE_DELAY) {
+      int idx = i - PIPE_DELAY;
       union {
         float f;
         uint32_t u;
       } y;
-      y.u = top->io_out_bits_out;
-      vout[received] = y.f;
+      y.u = top->io_out_out;
+      vout[idx] = y.f;
 
-      double g = (double)golden[received];
-      double h = (double)vout[received];
-      double denom = (g == 0.0 ? 1.0 : (g > 0 ? g : -g));
-      double err = ((h - g) >= 0 ? (h - g) : -(h - g)) / denom;
+      double g = (double)golden[idx];
+      double h = (double)vout[idx];
+      double denom = (g == 0.0 ? 1.0 : fabs(g));
+      double err = fabs(h - g) / denom;
 
       total_err += err;
-      if (err < 1e-6)
+      if (err < 1e-4)
         pass++;
       else
         fail++;
-
       if (err > max_err)
         max_err = err;
 
-      printf("%+13.3e %+13.3e %+13.3e %+13.3e %13.3e\n", vin1[received],
-             vin2[received], golden[received], vout[received], err);
-
-      received++;
+      printf("%+13.6e %+13.6e %+13.6e %13.6e\n", vin[idx], golden[idx],
+             vout[idx], err);
     }
   }
-
   printf("\nTotal=%d, Pass=%d (%.2f%%), Fail=%d (%.2f%%)\n", N, pass,
          (pass * 100.0 / N), fail, (fail * 100.0 / N));
   printf("AvgErr=%e, MaxErr=%e\n", total_err / N, max_err);
   printf("Total cycles: %llu\n", cycle_count);
 
-  free(vin1);
-  free(vin2);
+  free(vin);
   free(golden);
   free(vout);
 }
 
 int main() {
-  printf("Initializing ADD simulation...\n\n");
+  printf("Initializing EXP simulation...\n\n");
   sim_init();
   srand(time(NULL));
 

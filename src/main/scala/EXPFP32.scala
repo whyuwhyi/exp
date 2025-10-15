@@ -2,259 +2,118 @@ import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
 
+import fudian.{FCMA_ADD_s1, FCMA_ADD_s2, FMUL_s1, FMUL_s2, FMUL_s3, FMULToFADD, RawFloat}
+import fudian.utils.Multiplier
+
 object EXPFP32Parameters {
-  val LOG2E = "h3FB8AA3B".U(32.W)
-  val C0    = "h3F800000".U(32.W)
-  val C1    = "h3F317218".U(32.W)
-  val C2    = "h3E75FDF0".U(32.W)
-}
-
-class EXPFP32LUTInput extends Bundle {
-  val idx = UInt(8.W)
-}
-class EXPFP32LUTOutput extends Bundle {
-  val value = UInt(32.W)
-}
-
-class EXPFP32LUT extends Module {
-  val io = IO(new Bundle {
-    val in = Input(new EXPFP32LUTInput)
-    val out = Output(new EXPFP32LUTOutput)
-  })
-  val table = VecInit((0 until 256).map { i =>
-    val sign = (i >> 7) & 1
-    val mag  = i & 0x7f
-    val x = if (sign == 1) -(mag.toDouble / 128.0) else (mag.toDouble / 128.0)
-    val y = Math.pow(2.0, x)
-    val bits = java.lang.Float.floatToIntBits(y.toFloat)
-    bits.U(32.W)
-  })
-  io.out.value := table(io.in.idx)
-}
-
-class ADDFP32Input extends Bundle {
-  val in1 = UInt(32.W)
-  val in2 = UInt(32.W)
-}
-class ADDFP32Output extends Bundle {
-  val out = UInt(32.W)
-}
-class ADDFP32 extends Module {
-  val io = IO(new Bundle {
-    val in  = Flipped(Decoupled(new ADDFP32Input))
-    val out = Decoupled(new ADDFP32Output)
-  })
-
-  val s1_valid = RegInit(false.B)
-  val s2_valid = RegInit(false.B)
-  val s2_ready = io.out.ready
-  val s1_ready = !s1_valid || s2_ready
-  io.in.ready  := s1_ready
-  io.out.valid := s2_valid
-  val s1_fire = s1_ready && io.in.valid
-  val s2_fire = s2_ready && s1_valid
-  when(s1_ready){ s1_valid := io.in.valid }
-  when(s2_ready){ s2_valid := s1_valid }
-
-  val s2_sx       = Reg(UInt(1.W))
-  val s2_sy       = Reg(UInt(1.W))
-  val s2_ex       = Reg(UInt(8.W))
-  val s2_fx       = Reg(UInt(25.W))
-  val s2_aligned  = Reg(UInt(25.W))
-  val s2_guard    = Reg(Bool())
-  val s2_round    = Reg(Bool())
-  val s2_sticky   = Reg(Bool())
-  val s2_isSub    = Reg(Bool())
-
-  when(s1_fire){
-    val a = io.in.bits.in1
-    val b = io.in.bits.in2
-    val aExp  = a(30,23)
-    val bExp  = b(30,23)
-    val aFrac = Cat("b01".U(2.W), a(22,0))
-    val bFrac = Cat("b01".U(2.W), b(22,0))
-    val swap = WireDefault(false.B)
-    when(aExp < bExp){ swap := true.B } .elsewhen(aExp === bExp){ swap := aFrac < bFrac }
-    val x = Mux(swap,b,a)
-    val y = Mux(swap,a,b)
-    val sx = x(31)
-    val sy = y(31)
-    val ex = x(30,23)
-    val ey = y(30,23)
-    val fx = Cat("b01".U(2.W), x(22,0))
-    val fy = Cat("b01".U(2.W), y(22,0))
-    val diff = (ex.zext - ey.zext).asUInt
-    val diffGe25 = diff > 24.U
-    val aligned = Mux(diffGe25,0.U(25.W),(fy>>diff)(24,0))
-    val guard = Mux(diff===0.U,false.B,Mux(diff>25.U,false.B,((fy>>(diff-1.U))(0)).asBool))
-    val round = Mux(diff<=1.U,false.B,Mux(diff>26.U,false.B,((fy>>(diff-2.U))(0)).asBool))
-    val stickyCount = Mux(diff<=2.U,0.U,Mux(diff-2.U>25.U,25.U,diff-2.U))
-    val stickyfask = (1.U(26.W)<<stickyCount)-1.U
-    val sticky = Mux(diff<=2.U,false.B,(fy&stickyfask(24,0)).orR)
-    s2_sx      := sx
-    s2_sy      := sy
-    s2_ex      := ex
-    s2_fx      := fx
-    s2_aligned := aligned
-    s2_guard   := guard
-    s2_round   := round
-    s2_sticky  := sticky
-    s2_isSub   := sx ^ sy
-  }
-
-  val outReg = Reg(UInt(32.W))
-  io.out.bits.out := outReg
-
-  when(s2_fire){
-    val sumAdd = Cat(0.U(1.W),s2_fx)+Cat(0.U(1.W),s2_aligned)
-    val carryAdd = sumAdd(25)
-    val sumSub = Cat(0.U(1.W),s2_fx)+Cat(0.U(1.W),(~s2_aligned))+1.U
-    val subPre = sumSub(24,0)
-
-    val expAdd = Wire(UInt(8.W))
-    val mantAdd = Wire(UInt(25.W))
-    val gA = WireDefault(false.B)
-    val rA = WireDefault(false.B)
-    val sA = WireDefault(false.B)
-    when(carryAdd){
-      expAdd := s2_ex + 1.U
-      mantAdd := sumAdd(25,1)
-      gA := sumAdd(0).asBool
-      rA := s2_guard
-      sA := s2_round || s2_sticky
-    }.otherwise{
-      expAdd := s2_ex
-      mantAdd := sumAdd(24,0)
-      gA := s2_guard
-      rA := s2_round
-      sA := s2_sticky
-    }
-
-    val roundUp = gA&&(rA||sA||mantAdd(0).asBool)
-    val mantAddR = mantAdd+roundUp.asUInt
-    val addOverflow = mantAddR(24)
-    val expAddR = Mux(addOverflow,expAdd+1.U,expAdd)
-    val mantAddFinal = Mux(addOverflow,(mantAddR>>1).asUInt,mantAddR)
-
-    val mag24 = subPre(23,0)
-    val zeroSub = mag24===0.U
-    val lz = PriorityEncoder(Reverse(mag24))
-    val sh = Mux(zeroSub,24.U,lz)
-    val canSh = sh < s2_ex
-    val expSub = Mux(zeroSub,0.U,Mux(canSh,s2_ex-sh,0.U))
-    val mantSub = Mux(zeroSub,0.U(25.W),Mux(canSh,(subPre<<sh)(24,0),0.U(25.W)))
-
-    val expOut = Mux(s2_isSub,expSub,expAddR)
-    val mant25 = Mux(s2_isSub,mantSub,mantAddFinal)
-    val fracOut = mant25(22,0)
-    val signOut = Wire(UInt(1.W))
-    when(s2_isSub){
-      when(mantSub===0.U){ signOut:=0.U } .otherwise{ signOut:=Mux(s2_fx>=s2_aligned,s2_sx,s2_sy) }
-    }.otherwise{ signOut:=s2_sx }
-    outReg := Cat(signOut,expOut,fracOut)
-  }
+  val LOG2E     = "h3FB8AA3B".U(32.W)
+  val C0        = "h3F800000".U(32.W)
+  val C1        = "h3F317218".U(32.W)
+  val C2        = "h3E75FDF0".U(32.W)
+  val MIN_INPUT = "hC2AE999A".U(32.W) // -87.3
+  val MAX_INPUT = "h42B16666".U(32.W) // +88.7
+  val ZERO      = 0.U(32.W)
+  val INF       = "h7F800000".U(32.W)
+  val NAN       = "h7FC00000".U(32.W)
 }
 
 class MULFP32Input extends Bundle {
   val in1 = UInt(32.W)
   val in2 = UInt(32.W)
+  val rm  = UInt(3.W)
 }
 class MULFP32Output extends Bundle {
-  val out = UInt(32.W)
+  val out    = UInt(32.W)
+  val toAdd  = new FMULToFADD(8, 24)
+  val fflags = UInt(5.W)
 }
 class MULFP32 extends Module {
   val io = IO(new Bundle {
-    val in  = Flipped(Decoupled(new MULFP32Input))
-    val out = Decoupled(new MULFP32Output)
+    val in  = Input(new MULFP32Input)
+    val out = Output(new MULFP32Output)
   })
+  val expWidth = 8
+  val precision = 24
 
-  val s1_valid = RegInit(false.B)
-  val s2_valid = RegInit(false.B)
-  val s3_valid = RegInit(false.B)
-  val s3_ready = io.out.ready
-  val s2_ready = !s2_valid || s3_ready
-  val s1_ready = !s1_valid || s2_ready
-  io.in.ready  := s1_ready
-  io.out.valid := s3_valid
+  val mul   = Module(new Multiplier(precision + 1, pipeAt = Seq()))
+  val mulS1 = Module(new FMUL_s1(expWidth, precision))
+  val mulS2 = Module(new FMUL_s2(expWidth, precision))
+  val mulS3 = Module(new FMUL_s3(expWidth, precision))
 
-  val s1_fire = s1_ready && io.in.valid
-  val s2_fire = s2_ready && s1_valid
-  val s3_fire = s3_ready && s2_valid
+  mulS1.io.a  := io.in.in1
+  mulS1.io.b  := io.in.in2
+  mulS1.io.rm := io.in.rm
 
-  when(s1_ready) { s1_valid := io.in.valid }
-  when(s2_ready) { s2_valid := s1_valid }
-  when(s3_ready) { s3_valid := s2_valid }
+  val rawA = RawFloat.fromUInt(io.in.in1, expWidth, precision)
+  val rawB = RawFloat.fromUInt(io.in.in2, expWidth, precision)
 
-  val s1_sign  = Reg(UInt(1.W))
-  val s1_eSumS = Reg(SInt(10.W))
-  val s1_aMan  = Reg(UInt(24.W))
-  val s1_bMan  = Reg(UInt(24.W))
+  mul.io.a := rawA.sig
+  mul.io.b := rawB.sig
+  mul.io.regEnables.foreach(_ := true.B)
 
-  val s1_prod_ll = Reg(UInt(24.W))
-  val s1_prod_lh = Reg(UInt(24.W))
-  val s1_prod_hl = Reg(UInt(24.W))
-  val s1_prod_hh = Reg(UInt(24.W))
+  val s1Out  = RegNext(mulS1.io.out)
+  val prod   = RegNext(mul.io.result)
 
-  when(s1_fire) {
-    val a = io.in.bits.in1
-    val b = io.in.bits.in2
-    val aS = a(31); val aE = a(30,23); val aF = a(22,0)
-    val bS = b(31); val bE = b(30,23); val bF = b(22,0)
+  mulS2.io.in   := s1Out
+  mulS2.io.prod := prod
 
-    val aDen = aE === 0.U
-    val bDen = bE === 0.U
-    val aMan = Cat(Mux(aDen, 0.U(1.W), 1.U(1.W)), aF)
-    val bMan = Cat(Mux(bDen, 0.U(1.W), 1.U(1.W)), bF)
+  val s2Reg = RegNext(mulS2.io.out)
 
-    s1_sign  := aS ^ bS
-    s1_eSumS := (aE.zext + bE.zext - 127.S).asSInt
-    s1_aMan  := aMan
-    s1_bMan  := bMan
+  mulS3.io.in := s2Reg
 
-    val aL = aMan(11, 0)
-    val aH = aMan(23, 12)
-    val bL = bMan(11, 0)
-    val bH = bMan(23, 12)
+  val resultReg = RegNext(mulS3.io.result)
+  val fflagsReg = RegNext(mulS3.io.fflags)
+  val toAddReg  = RegNext(mulS3.io.to_fadd)
 
-    s1_prod_ll := aL * bL
-    s1_prod_lh := aL * bH
-    s1_prod_hl := aH * bL
-    s1_prod_hh := aH * bH
-  }
+  io.out.out    := resultReg
+  io.out.toAdd  := toAddReg
+  io.out.fflags := fflagsReg
+}
 
-  val s2_sign  = Reg(UInt(1.W))
-  val s2_eSumS = Reg(SInt(10.W))
-  val s2_prod  = Reg(UInt(48.W))
+class CMAFP32Input extends Bundle {
+  val a  = UInt(32.W)
+  val b  = UInt(32.W)
+  val c  = UInt(32.W)
+  val rm = UInt(3.W)
+}
+class CMAFP32Output extends Bundle {
+  val out    = UInt(32.W)
+  val fflags = UInt(5.W)
+}
+class CMAFP32 extends Module {
+  val io = IO(new Bundle {
+    val in  = Input(new CMAFP32Input)
+    val out = Output(new CMAFP32Output)
+  })
+  val expWidth = 8
+  val precision = 24
 
-  when(s2_fire) {
-    s2_sign  := s1_sign
-    s2_eSumS := s1_eSumS
+  val mul   = Module(new MULFP32)
+  val addS1 = Module(new FCMA_ADD_s1(expWidth, precision * 2, precision))
+  val addS2 = Module(new FCMA_ADD_s2(expWidth, precision * 2, precision))
 
-    val mid_sum = s1_prod_lh +& s1_prod_hl
-    val prod_full = (s1_prod_hh << 24) + (mid_sum << 12) + s1_prod_ll
+  mul.io.in.in1 := io.in.a
+  mul.io.in.in2 := io.in.b
+  mul.io.in.rm  := io.in.rm
 
-    s2_prod := prod_full(47, 0)
-  }
+  val toAdd = mul.io.out.toAdd
+  val cReg  = ShiftRegister(io.in.c, 3, true.B)
+  val rmReg = ShiftRegister(io.in.rm, 3, true.B)
 
-  val outReg = Reg(UInt(32.W))
-  io.out.bits.out := outReg
+  addS1.io.a             := Cat(cReg, 0.U(precision.W))
+  addS1.io.b             := toAdd.fp_prod.asUInt
+  addS1.io.rm            := rmReg
+  addS1.io.b_inter_valid := true.B
+  addS1.io.b_inter_flags := toAdd.inter_flags
 
-  when(s3_fire) {
-    val lead   = s2_prod(47)
-    val norm   = Mux(lead, s2_prod, s2_prod << 1)
-    val frac24 = norm(46,23)
-    val gr     = norm(22)
-    val st     = norm(21,0).orR
-    val rnd    = gr && (st || frac24(0))
-    val fracR25= Cat(0.U(1.W), frac24) + rnd
-    val carry  = fracR25(24)
-    val frac23 = Mux(carry, fracR25(24,2), fracR25(23,1))
-    val eAdj   = s2_eSumS + Mux(lead, 1.S, 0.S) + carry.zext
-    val eLo    = eAdj < 0.S
-    val eHi    = eAdj > 255.S
-    val eU     = Mux(eLo, 0.U, Mux(eHi, 255.U, eAdj.asUInt))(7,0)
-    outReg := Cat(s2_sign, eU, frac23)
-  }
+  val s1Reg = RegNext(addS1.io.out)
+  addS2.io.in := s1Reg
+
+  val resultReg = RegNext(addS2.io.result)
+  val fflagsReg = RegNext(addS2.io.fflags)
+
+  io.out.out    := resultReg
+  io.out.fflags := fflagsReg
 }
 
 class DecomposeFP32Input extends Bundle {
@@ -281,10 +140,6 @@ class DecomposeFP32 extends Module {
   val sh  = Mux(eS < 0.S, (-eS).asUInt, eS.asUInt)
   val shifted = Mux(eS < 0.S, man.zext.asUInt >> sh, man.zext.asUInt << sh)
 
-  io.out.yi := Cat(s, shifted(30,23))
-
-  io.out.yfi := Cat(s, shifted(22,16))
-
   val fracLow16 = shifted(15,0)
 
   val isZero = fracLow16 === 0.U
@@ -293,122 +148,227 @@ class DecomposeFP32 extends Module {
 
   val mant   = (fracLow16 << (clz + 8.U))(22,0)
 
-  val yfjOut = Cat(s, exp, mant)
+  val yi  = Cat(s, shifted(30,23))
+  val yfi = Cat(s, shifted(22,16))
+  val yfj = Cat(s, exp, mant)
 
-  io.out.yfj := yfjOut
+  val yiReg  = RegNext(yi)
+  val yfiReg = RegNext(yfi)
+  val yfjReg = RegNext(yfj)
+
+  io.out.yi  := yiReg
+  io.out.yfi := yfiReg
+  io.out.yfj := yfjReg
+}
+
+class EXPFP32LUTInput extends Bundle {
+  val idx = UInt(8.W)
+}
+class EXPFP32LUTOutput extends Bundle {
+  val value = UInt(32.W)
+}
+
+class EXPFP32LUT extends Module {
+  val io = IO(new Bundle {
+    val in = Input(new EXPFP32LUTInput)
+    val out = Output(new EXPFP32LUTOutput)
+  })
+
+  val table = VecInit((0 until 256).map { i =>
+    val sign = (i >> 7) & 1
+    val mag  = i & 0x7f
+    val x = if (sign == 1) -(mag.toDouble / 128.0) else (mag.toDouble / 128.0)
+    val y = Math.pow(2.0, x)
+    val bits = java.lang.Float.floatToIntBits(y.toFloat)
+    bits.U(32.W)
+  })
+
+  val valueReg = RegNext(table(io.in.idx))
+
+  io.out.value := valueReg
+}
+
+
+class FilterFP32Input extends Bundle {
+  val in = UInt(32.W)
+  val rm = UInt(3.W)
+}
+class FilterFP32Output extends Bundle {
+  val out       = UInt(32.W)
+  val bypassVal = UInt(32.W)
+  val bypass     = Bool()
+}
+class FilterFP32 extends Module {
+  val io = IO(new Bundle {
+    val in  = Input(new FilterFP32Input)
+    val out = Output(new FilterFP32Output)
+  })
+
+  val s = io.in.in(31)
+  val e = io.in.in(30, 23)
+  val f = io.in.in(22, 0)
+
+  val isInfPos = (e === "hFF".U) && (f === 0.U) && (s === 0.U)
+  val isInfNeg = (e === "hFF".U) && (f === 0.U) && (s === 1.U)
+  val isNaN    = (e === "hFF".U) && (f =/= 0.U)
+
+  val tooBig = (!s) && (io.in.in > EXPFP32Parameters.MAX_INPUT) // +88.7
+  val tooNeg = s && (io.in.in > EXPFP32Parameters.MIN_INPUT)    // -87.3
+
+  val bypass = isNaN || isInfPos || isInfNeg || tooBig || tooNeg
+
+  val filteredVal = Wire(UInt(32.W))
+  val bypassVal   = Wire(UInt(32.W))
+
+  when (isNaN) {
+    filteredVal := EXPFP32Parameters.NAN
+    bypassVal   := EXPFP32Parameters.NAN
+  }.elsewhen (isInfPos || tooBig) {
+    filteredVal := EXPFP32Parameters.INF
+    bypassVal   := EXPFP32Parameters.INF
+  }.elsewhen (isInfNeg || tooNeg) {
+    filteredVal := EXPFP32Parameters.ZERO
+    bypassVal   := EXPFP32Parameters.ZERO
+  }.otherwise {
+    filteredVal := io.in.in
+    bypassVal   := EXPFP32Parameters.ZERO
+  }
+
+  val filteredValReg = RegNext(filteredVal)
+  val bypassValReg   = RegNext(bypassVal)
+  val bypassReg      = RegNext(bypass)
+
+  io.out.out       := filteredValReg
+  io.out.bypassVal := bypassValReg
+  io.out.bypass    := bypassReg
+}
+
+class EXPFP32MainPathInput extends Bundle {
+  val in = UInt(32.W)
+  val rm = UInt(3.W)
+}
+class EXPFP32MainPathOutput extends Bundle {
+  val out = UInt(32.W)
+}
+
+class EXPFP32MainPath extends Module {
+  val io = IO(new Bundle {
+    val in  = Input(new EXPFP32Input)
+    val out = Output(new EXPFP32Output)
+  })
+
+  val mulA   = Module(new MULFP32)
+  val cma0   = Module(new CMAFP32)
+  val cma1   = Module(new CMAFP32)
+  val mulC   = Module(new MULFP32)
+  val decomp = Module(new DecomposeFP32)
+  val lut    = Module(new EXPFP32LUT)
+
+  val rm = io.in.rm
+  val rmForCma0 = ShiftRegister(rm, 4, true.B)
+  val rmForCma1 = ShiftRegister(rm, 9, true.B)
+  val rmForMulC = ShiftRegister(rm, 14, true.B)
+
+  mulA.io.in.in1 := io.in.in
+  mulA.io.in.in2 := EXPFP32Parameters.LOG2E
+  mulA.io.in.rm  := rm
+
+  val y = mulA.io.out.out
+
+  decomp.io.in.y := y
+  val yi  = decomp.io.out.yi
+  val yfi = decomp.io.out.yfi
+  val yfj = decomp.io.out.yfj
+
+  cma0.io.in.a  := yfj
+  cma0.io.in.b  := EXPFP32Parameters.C2
+  cma0.io.in.c  := EXPFP32Parameters.C1
+  cma0.io.in.rm := rmForCma0
+
+  val yfjReg = ShiftRegister(yfj, 5, true.B)
+  cma1.io.in.a  := yfjReg
+  cma1.io.in.b  := cma0.io.out.out
+  cma1.io.in.c  := EXPFP32Parameters.C0
+  cma1.io.in.rm := rmForCma1
+
+  val yfiReg = ShiftRegister(yfi, 9, true.B)
+  lut.io.in.idx  := yfiReg
+  mulC.io.in.in1 := lut.io.out.value
+  mulC.io.in.in2 := cma1.io.out.out
+  mulC.io.in.rm  := rmForMulC
+
+  val yiReg = ShiftRegister(yi, 13, true.B)
+  val ef    = mulC.io.out.out(30,23)
+  val mant  = mulC.io.out.out(22,0)
+  val sign  = yiReg(8)
+  val ei    = yiReg(7,0)
+  val e = (ef.zext.asSInt + Mux(sign === 1.U, -ei.zext.asSInt, ei.zext.asSInt))(7, 0)
+
+  val out  = Cat(0.U(1.W), e(7, 0), mant)
+  val outReg = RegNext(out)
+
+  io.out.out := outReg
 }
 
 class EXPFP32Input extends Bundle {
   val in = UInt(32.W)
+  val rm = UInt(3.W)
 }
 class EXPFP32Output extends Bundle {
   val out = UInt(32.W)
 }
+
 class EXPFP32 extends Module {
   val io = IO(new Bundle {
     val in  = Flipped(Decoupled(new EXPFP32Input))
     val out = Decoupled(new EXPFP32Output)
   })
 
-  val mulA   = Module(new MULFP32)       // s0: x * LOG2E
-  val decomp = Module(new DecomposeFP32) // s1: decompose y -> yi, yfi, yfj
-  val mulB0  = Module(new MULFP32)       // s2: yfj * C2
-  val addB0  = Module(new ADDFP32)       // s3: t0 + C1
-  val mulB1  = Module(new MULFP32)       // s4: t1 * yfj
-  val addB1  = Module(new ADDFP32)       // s5: t2 + C0
-  val mulC   = Module(new MULFP32)       // s6: LUT(yfi) * t3
-  val lut    = Module(new EXPFP32LUT)
+  val entries = 24
+  val latency = 19
 
-  io.in.ready         := mulA.io.in.ready
+  val filter   = Module(new FilterFP32)
+  val mainPath = Module(new EXPFP32MainPath)
+  val outQ     = Module(new Queue(new EXPFP32Output, entries, pipe = true, flow = false))
 
-  mulA.io.in.valid    := io.in.valid
-  mulA.io.in.bits.in1 := io.in.bits.in
-  mulA.io.in.bits.in2 := EXPFP32Parameters.LOG2E
+  filter.io.in.in := io.in.bits.in
+  filter.io.in.rm := io.in.bits.rm
 
-  val s0Q = Module(new Queue(UInt(32.W), 1, pipe=true, flow=false))
-  s0Q.io.enq.valid  := mulA.io.out.valid
-  s0Q.io.enq.bits   := mulA.io.out.bits.out
-  mulA.io.out.ready := s0Q.io.enq.ready
+  mainPath.io.in.in := filter.io.out.out
+  mainPath.io.in.rm := io.in.bits.rm
 
-  decomp.io.in.y    := s0Q.io.deq.bits
-  val yi_s1  = decomp.io.out.yi
-  val yfi_s1 = decomp.io.out.yfi
-  val yfj_s1 = decomp.io.out.yfj
+  val validPipe   = ShiftRegister(io.in.fire, latency, true.B)
+  val bypassPipe  = ShiftRegister(filter.io.out.bypass, latency - 1, true.B)
+  val bypassValP  = ShiftRegister(filter.io.out.bypassVal, latency - 1, true.B)
 
-  val qYfj = Module(new Queue(UInt(32.W), 6))
-  val qYfi = Module(new Queue(UInt(8.W),  11))
-  val qYi  = Module(new Queue(UInt(9.W),  14))
+  val mainOut = mainPath.io.out.out
+  val finalOut = Mux(bypassPipe, bypassValP, mainOut)
 
-  val s1_fire = s0Q.io.deq.valid && mulB0.io.in.ready && qYfj.io.enq.ready && qYfi.io.enq.ready && qYi.io.enq.ready
+  outQ.io.enq.valid    := validPipe
+  outQ.io.enq.bits.out := finalOut
 
-  s0Q.io.deq.ready := s1_fire
+  val inflight = RegInit(0.U(6.W))
+  inflight := inflight + io.in.fire - outQ.io.enq.fire
 
-  mulB0.io.in.valid    := s1_fire
-  mulB0.io.in.bits.in1 := yfj_s1
-  mulB0.io.in.bits.in2 := EXPFP32Parameters.C2
+  val freeSlots = (entries.U - outQ.io.count) - inflight
+  io.in.ready := freeSlots > 0.U
 
-  qYfj.io.enq.valid := s1_fire;
-  qYfj.io.enq.bits  := yfj_s1
-  qYfi.io.enq.valid := s1_fire;
-  qYfi.io.enq.bits  := yfi_s1
-  qYi .io.enq.valid := s1_fire;
-  qYi .io.enq.bits  := yi_s1
-
-  addB0.io.in.valid    := mulB0.io.out.valid
-  addB0.io.in.bits.in1 := mulB0.io.out.bits.out
-  addB0.io.in.bits.in2 := EXPFP32Parameters.C1
-  mulB0.io.out.ready   := addB0.io.in.ready
-
-  val s4_in_valid = addB0.io.out.valid && qYfj.io.deq.valid
-  mulB1.io.in.valid    := s4_in_valid
-  mulB1.io.in.bits.in1 := addB0.io.out.bits.out
-  mulB1.io.in.bits.in2 := qYfj.io.deq.bits
-
-  addB0.io.out.ready   := mulB1.io.in.ready && qYfj.io.deq.valid
-  qYfj.io.deq.ready    := mulB1.io.in.fire
-
-  addB1.io.in.valid    := mulB1.io.out.valid
-  addB1.io.in.bits.in1 := mulB1.io.out.bits.out
-  addB1.io.in.bits.in2 := EXPFP32Parameters.C0
-  mulB1.io.out.ready   := addB1.io.in.ready
-
-  val s6_in_valid = addB1.io.out.valid && qYfi.io.deq.valid
-  lut.io.in.idx         := qYfi.io.deq.bits
-  mulC.io.in.valid     := s6_in_valid
-  mulC.io.in.bits.in1  := lut.io.out.value
-  mulC.io.in.bits.in2  := addB1.io.out.bits.out
-
-  addB1.io.out.ready   := mulC.io.in.ready && qYfi.io.deq.valid
-  qYfi.io.deq.ready    := mulC.io.in.fire
-
-  val t4Valid = mulC.io.out.valid
-  val yiValid = qYi.io.deq.valid
-  val s7Fire  = t4Valid && yiValid
-
-  val prodC = mulC.io.out.bits.out
-  val eprod = prodC(30,23)
-  val yiC   = qYi.io.deq.bits
-  val sign  = yiC(8)
-  val ee    = yiC(7,0)
-
-  val eAdjS = eprod.zext.asSInt + Mux(sign === 1.U, -ee.zext.asSInt, ee.zext.asSInt)
-  val eU    = Mux(eAdjS < 0.S, 0.U, Mux(eAdjS > 255.S, 255.U, eAdjS.asUInt))(7,0)
-  val outW  = Cat(0.U(1.W), eU, prodC(22,0))
-
-  io.out.valid       := s7Fire
-  io.out.bits.out    := outW
-  mulC.io.out.ready  := io.out.ready && yiValid
-  qYi.io.deq.ready   := io.out.ready && t4Valid
+  io.out <> outQ.io.deq
 }
 
 object EXPFP32Gen extends App {
   ChiselStage.emitSystemVerilogFile(
-    new ADDFP32,
+    new MULFP32,
     Array("--target-dir","rtl"),
     Array("-lowering-options=disallowLocalVariables")
   )
   ChiselStage.emitSystemVerilogFile(
-    new MULFP32,
+    new CMAFP32,
+    Array("--target-dir","rtl"),
+    Array("-lowering-options=disallowLocalVariables")
+  )
+  ChiselStage.emitSystemVerilogFile(
+    new EXPFP32MainPath,
     Array("--target-dir","rtl"),
     Array("-lowering-options=disallowLocalVariables")
   )
