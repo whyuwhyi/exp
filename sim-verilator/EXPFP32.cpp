@@ -64,7 +64,7 @@ void sim_exit() {
 }
 
 static void test_random_cases() {
-  const int N = 100000;
+  const int N = 1000000;
   int pass = 0, fail = 0;
   double total_err = 0.0, max_err = 0.0;
 
@@ -324,9 +324,9 @@ int main() {
   sim_init();
   srand(time(NULL));
 
-  // test_random_cases();
-  // test_special_cases();
-  test_valid_range_cases();
+  test_random_cases();
+  test_special_cases();
+  // test_valid_range_cases();
 
   printf("\nSimulation complete.\n");
   sim_exit();
