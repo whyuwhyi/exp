@@ -8,11 +8,6 @@ import mill.scalalib.publish._
 import coursier.maven.MavenRepository
 
 // Import from each repository
-import $file.dependencies.`rocket-chip`.common
-import $file.dependencies.`rocket-chip`.dependencies.hardfloat.common
-import $file.dependencies.`rocket-chip`.dependencies.diplomacy.common
-import $file.dependencies.`rocket-chip`.dependencies.cde.common
-import $file.dependencies.`berkeley-hardfloat`.common
 import $file.dependencies.`fpuv2`.build
 import $file.common
 
@@ -33,20 +28,6 @@ object v {
     // "3.6.0" -> (ivy"edu.berkeley.cs::chisel3:3.6.0", ivy"edu.berkeley.cs:::chisel3-plugin:3.6.0", ivy"edu.berkeley.cs::chiseltest:0.6.2"),
     // "3.5.0" -> (ivy"edu.berkeley.cs::chisel3:3.5.0", ivy"edu.berkeley.cs:::chisel3-plugin:3.5.0", ivy"edu.berkeley.cs::chiseltest:0.5.0"),
   )
-}
-
-// Define berkeley-hardfloat module
-object hardfloat extends Cross[Hardfloat](v.chiselCrossVersions.keys.toSeq)
-trait Hardfloat
-  extends millbuild.dependencies.`berkeley-hardfloat`.common.HardfloatModule
-    with Cross.Module[String] {
-  def chiselModule = None
-  def chiselPluginJar = None
-  def chiselVersion: String = crossValue
-  def scalaVersion = v.scalaVersions(chiselVersion)
-  def chiselIvy = Some(v.chiselCrossVersions(chiselVersion)._1)
-  def chiselPluginIvy = Some(v.chiselCrossVersions(chiselVersion)._2)
-  override def millSourcePath = os.pwd / "dependencies" / "berkeley-hardfloat" / "hardfloat"
 }
 
 // Define fpuv2 module
@@ -72,103 +53,6 @@ trait FPUv2 extends SbtModule
   }
 }
 
-object rocketchip extends Cross[RocketChip](v.chiselCrossVersions.keys.toSeq)
-trait RocketChip
-  extends millbuild.dependencies.`rocket-chip`.common.RocketChipModule
-    with SbtModule
-    with Cross.Module[String] {
-  def chiselVersion: String = crossValue
-  def scalaVersion: T[String] = T(v.scalaVersions(chiselVersion))
-  override def millSourcePath = os.pwd / "dependencies" / "rocket-chip"
-
-  def chiselModule = None
-  def chiselPluginJar = None
-  def chiselIvy = Some(v.chiselCrossVersions(chiselVersion)._1)
-  def chiselPluginIvy = Some(v.chiselCrossVersions(chiselVersion)._2)
-
-  def macrosModule = macros(crossValue)
-  def hardfloatModule = hardfloat(crossValue)
-  def cdeModule = cde(crossValue)
-  def diplomacyModule = diplomacy(crossValue)
-  def mainargsIvy = ivy"com.lihaoyi::mainargs:0.5.0"
-  def json4sJacksonIvy = ivy"org.json4s::json4s-jackson:4.0.5"
-
-  object macros extends Cross[Macros](crossValue)
-  trait Macros
-    extends millbuild.dependencies.`rocket-chip`.common.MacrosModule
-      with SbtModule with Cross.Module[String] {
-    def scalaVersion: T[String] = T(v.scalaVersions(crossValue))
-    def scalaReflectIvy = v.scalaReflect(crossValue)
-  }
-
-  object hardfloat extends Cross[Hardfloat](crossValue)
-  trait Hardfloat
-    extends millbuild.dependencies.`rocket-chip`.dependencies.hardfloat.common.HardfloatModule
-      with Cross.Module[String] {
-    def scalaVersion: T[String] = T(v.scalaVersions(crossValue))
-    override def millSourcePath = os.pwd / "dependencies" / "rocket-chip" / "dependencies" / "hardfloat" / "hardfloat"
-
-    def chiselModule = None
-    def chiselPluginJar = None
-    def chiselIvy = Some(v.chiselCrossVersions(chiselVersion)._1)
-    def chiselPluginIvy = Some(v.chiselCrossVersions(chiselVersion)._2)
-  }
-
-  object cde extends Cross[CDE](crossValue)
-  trait CDE
-    extends millbuild.dependencies.`rocket-chip`.dependencies.cde.common.CDEModule
-      with ScalaModule
-      with Cross.Module[String] {
-    def scalaVersion: T[String] = T(v.scalaVersions(crossValue))
-    override def millSourcePath = os.pwd / "dependencies" / "rocket-chip" / "dependencies" / "cde" / "cde"
-  }
-
-  object diplomacy extends Cross[Diplomacy](crossValue)
-  trait Diplomacy
-    extends millbuild.dependencies.`rocket-chip`.dependencies.diplomacy.common.DiplomacyModule
-      with Cross.Module[String] {
-    override def scalaVersion: T[String] = T(v.scalaVersions(crossValue))
-    override def millSourcePath = os.pwd / "dependencies" / "rocket-chip" / "dependencies" / "diplomacy" / "diplomacy"
-
-    def chiselModule = None
-    def chiselPluginJar = None
-    def chiselIvy = Option.when(crossValue != "source")(v.chiselCrossVersions(crossValue)._1)
-    def chiselPluginIvy = Option.when(crossValue != "source")(v.chiselCrossVersions(crossValue)._2)
-    // use CDE from source until published to sonatype
-    def cdeModule = cde(crossValue)
-    def sourcecodeIvy = ivy"com.lihaoyi::sourcecode:0.3.1"
-  }
-}
-
-object inclusivecache extends Cross[InclusiveCache](v.chiselCrossVersions.keys.toSeq)
-trait InclusiveCache
-  extends millbuild.common.HasChisel
-    with Cross.Module[String] {
-  def chiselVersion: String = crossValue
-  def scalaVersion = v.scalaVersions(chiselVersion)
-  override def millSourcePath = os.pwd / "dependencies" / "rocket-chip-inclusive-cache" / "design" / "craft" / "inclusivecache"
-
-  def chiselIvy = Some(v.chiselCrossVersions(chiselVersion)._1)
-  def chiselPluginIvy = Some(v.chiselCrossVersions(chiselVersion)._2)
-
-  override def scalacOptions = T {
-    super.scalacOptions() ++ Agg("-Xsource:2.13")
-  }
-
-  def rocketchipModule = rocketchip(crossValue)
-  override def moduleDeps = super.moduleDeps ++ Seq(rocketchipModule)
-}
-
-object MemboxS extends Cross[MemboxS](v.chiselCrossVersions.keys.toSeq)
-trait MemboxS extends millbuild.common.HasChisel
-  with SbtModule with Cross.Module[String] {
-  def chiselVersion: String = crossValue
-  def scalaVersion = v.scalaVersions(chiselVersion)
-  def chiselIvy = Some(v.chiselCrossVersions(chiselVersion)._1)
-  def chiselPluginIvy = Some(v.chiselCrossVersions(chiselVersion)._2)
-  override def millSourcePath = os.pwd / "dependencies" / "Membox2.Scala"
-}
-
 object EXPFP32 extends Cross[EXPFP32](v.chiselCrossVersions.keys.toSeq)
 trait EXPFP32
   extends millbuild.common.VentusModule
@@ -182,9 +66,6 @@ trait EXPFP32
 
   def hardfloatModule = hardfloat(crossValue)
   def fpuv2Module = fpuv2(crossValue)
-  def rocketchipModule = rocketchip(crossValue)
-  def inclusivecacheModule = inclusivecache(crossValue)
-  def memboxModule = MemboxS(crossValue)
   def ivyDeps = super.ivyDeps() ++ Agg(
       ivy"io.circe::circe-core:0.14.6",
       ivy"io.circe::circe-generic:0.14.6",

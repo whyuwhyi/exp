@@ -17,3 +17,6 @@ $(TARGET): $(VSRC) $(CSRC)
 
 run: $(TARGET)
 	./$(TARGET)
+
+init:
+	git submodule update --init --recursive --progress
