@@ -50,85 +50,228 @@
   `endif // not def ENABLE_INITIAL_MEM_
 `endif // not def SYNTHESIS
 
-module FilterFP32(	// src/scala/EXPFP32.scala:354:7
-  input         clock,	// src/scala/EXPFP32.scala:354:7
-                reset,	// src/scala/EXPFP32.scala:354:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:365:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:365:14
-  input  [31:0] io_in_bits_in,	// src/scala/EXPFP32.scala:365:14
-  input  [2:0]  io_in_bits_ctrl_rm,	// src/scala/EXPFP32.scala:365:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:365:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:365:14
-  output [31:0] io_out_bits_out,	// src/scala/EXPFP32.scala:365:14
-  output        io_out_bits_bypass,	// src/scala/EXPFP32.scala:365:14
-  output [31:0] io_out_bits_bypassVal,	// src/scala/EXPFP32.scala:365:14
-  output [2:0]  io_out_bits_ctrl_rm	// src/scala/EXPFP32.scala:365:14
+module FilterFP32(	// src/scala/EX2FP32.scala:353:7
+  input         clock,	// src/scala/EX2FP32.scala:353:7
+                reset,	// src/scala/EX2FP32.scala:353:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:364:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:364:14
+  input  [31:0] io_in_bits_in,	// src/scala/EX2FP32.scala:364:14
+  input  [2:0]  io_in_bits_ctrl_rm,	// src/scala/EX2FP32.scala:364:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:364:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:364:14
+  output [31:0] io_out_bits_out,	// src/scala/EX2FP32.scala:364:14
+  output        io_out_bits_bypass,	// src/scala/EX2FP32.scala:364:14
+  output [31:0] io_out_bits_bypassVal,	// src/scala/EX2FP32.scala:364:14
+  output [2:0]  io_out_bits_ctrl_rm	// src/scala/EX2FP32.scala:364:14
 );
 
-  reg         s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [31:0] s1Pipe_rBits_out;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s1Pipe_rBits_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  wire        s1_ready = ~s1Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire        _isInfNeg_T_1 = io_in_bits_in[22:0] == 23'h0;	// src/scala/EXPFP32.scala:372:24, :374:40
-  wire        isInfPos = (&(io_in_bits_in[30:23])) & _isInfNeg_T_1 & ~(io_in_bits_in[31]);	// src/scala/EXPFP32.scala:370:24, :371:24, :374:{21,40,49,55}
-  wire        isNaN = (&(io_in_bits_in[30:23])) & (|(io_in_bits_in[22:0]));	// src/scala/EXPFP32.scala:371:24, :372:24, :374:21, :376:{34,40}
-  wire        tooBig = ~(io_in_bits_in[31]) & io_in_bits_in > 32'h42B16666;	// src/scala/EXPFP32.scala:370:24, :374:55, :378:{21,39}
+  reg         s1Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [31:0] s1Pipe_rBits_out;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s1Pipe_rBits_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s1Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+  wire        s1_ready = ~s1Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  wire        _isInfNeg_T_1 = io_in_bits_in[22:0] == 23'h0;	// src/scala/EX2FP32.scala:371:24, :373:40
+  wire        isInfPos = (&(io_in_bits_in[30:23])) & _isInfNeg_T_1 & ~(io_in_bits_in[31]);	// src/scala/EX2FP32.scala:369:24, :370:24, :373:{21,40,49,55}
+  wire        isNaN = (&(io_in_bits_in[30:23])) & (|(io_in_bits_in[22:0]));	// src/scala/EX2FP32.scala:370:24, :371:24, :373:21, :375:{34,40}
+  wire        tooBig = ~(io_in_bits_in[31]) & io_in_bits_in > 32'h42B16666;	// src/scala/EX2FP32.scala:369:24, :373:55, :377:{21,39}
   wire        bypass =
     isNaN | isInfPos | (&(io_in_bits_in[30:23])) & _isInfNeg_T_1 & io_in_bits_in[31]
-    | tooBig | io_in_bits_in[31] & io_in_bits_in > 32'hC2AE999A;	// src/scala/EXPFP32.scala:370:24, :371:24, :374:{21,40,49}, :375:49, :376:34, :378:21, :379:{21,39}, :381:56
-  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43
-  wire        _GEN = ~_s1Pipe_T | bypass;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:26:25, :32:36, :33:18, :381:56
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:354:7
-    if (reset)	// src/scala/EXPFP32.scala:354:7
-      s1Pipe_rValid <= 1'h0;	// src/scala/EXPFP32.scala:25:29, :374:40
-    else	// src/scala/EXPFP32.scala:354:7
-      s1Pipe_rValid <= _s1Pipe_T | ~(io_out_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
-    if (_GEN) begin	// src/scala/EXPFP32.scala:26:25, :32:36, :33:18
+    | tooBig | io_in_bits_in[31] & io_in_bits_in > 32'hC2AE999A;	// src/scala/EX2FP32.scala:369:24, :370:24, :373:{21,40,49}, :374:49, :375:34, :377:21, :378:{21,39}, :380:56
+  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43
+  wire        _GEN = ~_s1Pipe_T | bypass;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:25:25, :31:36, :32:18, :380:56
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:353:7
+    if (reset)	// src/scala/EX2FP32.scala:353:7
+      s1Pipe_rValid <= 1'h0;	// src/scala/EX2FP32.scala:24:29, :373:40
+    else	// src/scala/EX2FP32.scala:353:7
+      s1Pipe_rValid <= _s1Pipe_T | ~(io_out_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
+    if (_GEN) begin	// src/scala/EX2FP32.scala:25:25, :31:36, :32:18
     end
-    else	// src/scala/EXPFP32.scala:26:25, :32:36, :33:18
-      s1Pipe_rBits_out <= io_in_bits_in;	// src/scala/EXPFP32.scala:26:25
+    else	// src/scala/EX2FP32.scala:25:25, :31:36, :32:18
+      s1Pipe_rBits_out <= io_in_bits_in;	// src/scala/EX2FP32.scala:25:25
     if (_s1Pipe_T)	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s1Pipe_rBits_bypass <= bypass;	// src/scala/EXPFP32.scala:26:25, :381:56
-    if (_s1Pipe_T & bypass)	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:26:25, :32:36, :33:18, :381:56
+      s1Pipe_rBits_bypass <= bypass;	// src/scala/EX2FP32.scala:25:25, :380:56
+    if (_s1Pipe_T & bypass)	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:25:25, :31:36, :32:18, :380:56
       s1Pipe_rBits_bypassVal <=
-        isNaN ? 32'h7FC00000 : isInfPos | tooBig ? 32'h7F800000 : 32'h0;	// src/scala/EXPFP32.scala:26:25, :374:49, :376:34, :378:21, :385:16, :386:17, :387:{24,35}, :388:17, :389:35, :390:17
-    if (_GEN) begin	// src/scala/EXPFP32.scala:26:25, :32:36, :33:18
+        isNaN ? 32'h7FC00000 : isInfPos | tooBig ? 32'h7F800000 : 32'h0;	// src/scala/EX2FP32.scala:25:25, :373:49, :375:34, :377:21, :384:16, :385:17, :386:{24,35}, :387:17, :388:35, :389:17
+    if (_GEN) begin	// src/scala/EX2FP32.scala:25:25, :31:36, :32:18
     end
-    else	// src/scala/EXPFP32.scala:26:25, :32:36, :33:18
-      s1Pipe_rBits_ctrl_rm <= io_in_bits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
+    else	// src/scala/EX2FP32.scala:25:25, :31:36, :32:18
+      s1Pipe_rBits_ctrl_rm <= io_in_bits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:354:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:354:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:354:7
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:353:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:353:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:353:7
     `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:2];	// src/scala/EXPFP32.scala:354:7
-    initial begin	// src/scala/EXPFP32.scala:354:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:354:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:354:7
+    logic [31:0] _RANDOM[0:2];	// src/scala/EX2FP32.scala:353:7
+    initial begin	// src/scala/EX2FP32.scala:353:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:353:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:353:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:354:7
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:353:7
         for (logic [1:0] i = 2'h0; i < 2'h3; i += 2'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:354:7
-        end	// src/scala/EXPFP32.scala:354:7
-        s1Pipe_rValid = _RANDOM[2'h0][0];	// src/scala/EXPFP32.scala:25:29, :354:7
-        s1Pipe_rBits_out = {_RANDOM[2'h0][31:1], _RANDOM[2'h1][0]};	// src/scala/EXPFP32.scala:25:29, :26:25, :354:7
-        s1Pipe_rBits_bypass = _RANDOM[2'h1][1];	// src/scala/EXPFP32.scala:26:25, :354:7
-        s1Pipe_rBits_bypassVal = {_RANDOM[2'h1][31:2], _RANDOM[2'h2][1:0]};	// src/scala/EXPFP32.scala:26:25, :354:7
-        s1Pipe_rBits_ctrl_rm = _RANDOM[2'h2][4:2];	// src/scala/EXPFP32.scala:26:25, :354:7
+          _RANDOM[i] = `RANDOM;	// src/scala/EX2FP32.scala:353:7
+        end	// src/scala/EX2FP32.scala:353:7
+        s1Pipe_rValid = _RANDOM[2'h0][0];	// src/scala/EX2FP32.scala:24:29, :353:7
+        s1Pipe_rBits_out = {_RANDOM[2'h0][31:1], _RANDOM[2'h1][0]};	// src/scala/EX2FP32.scala:24:29, :25:25, :353:7
+        s1Pipe_rBits_bypass = _RANDOM[2'h1][1];	// src/scala/EX2FP32.scala:25:25, :353:7
+        s1Pipe_rBits_bypassVal = {_RANDOM[2'h1][31:2], _RANDOM[2'h2][1:0]};	// src/scala/EX2FP32.scala:25:25, :353:7
+        s1Pipe_rBits_ctrl_rm = _RANDOM[2'h2][4:2];	// src/scala/EX2FP32.scala:25:25, :353:7
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:354:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:354:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:353:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:353:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  assign io_in_ready = s1_ready;	// src/scala/EXPFP32.scala:28:43, :354:7
-  assign io_out_valid = s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :354:7
-  assign io_out_bits_out = s1Pipe_rBits_out;	// src/scala/EXPFP32.scala:26:25, :354:7
-  assign io_out_bits_bypass = s1Pipe_rBits_bypass;	// src/scala/EXPFP32.scala:26:25, :354:7
-  assign io_out_bits_bypassVal = s1Pipe_rBits_bypassVal;	// src/scala/EXPFP32.scala:26:25, :354:7
-  assign io_out_bits_ctrl_rm = s1Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25, :354:7
+  assign io_in_ready = s1_ready;	// src/scala/EX2FP32.scala:27:43, :353:7
+  assign io_out_valid = s1Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :353:7
+  assign io_out_bits_out = s1Pipe_rBits_out;	// src/scala/EX2FP32.scala:25:25, :353:7
+  assign io_out_bits_bypass = s1Pipe_rBits_bypass;	// src/scala/EX2FP32.scala:25:25, :353:7
+  assign io_out_bits_bypassVal = s1Pipe_rBits_bypassVal;	// src/scala/EX2FP32.scala:25:25, :353:7
+  assign io_out_bits_ctrl_rm = s1Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25, :353:7
+endmodule
+
+module DecomposeFP32(	// src/scala/EX2FP32.scala:288:7
+  input         clock,	// src/scala/EX2FP32.scala:288:7
+                reset,	// src/scala/EX2FP32.scala:288:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:299:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:299:14
+  input  [31:0] io_in_bits_y,	// src/scala/EX2FP32.scala:299:14
+  input  [2:0]  io_in_bits_ctrl_rm,	// src/scala/EX2FP32.scala:299:14
+  input         io_in_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:299:14
+  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EX2FP32.scala:299:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:299:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:299:14
+  output [8:0]  io_out_bits_yi,	// src/scala/EX2FP32.scala:299:14
+  output [7:0]  io_out_bits_yfi,	// src/scala/EX2FP32.scala:299:14
+  output [31:0] io_out_bits_yfj,	// src/scala/EX2FP32.scala:299:14
+  output [2:0]  io_out_bits_ctrl_rm,	// src/scala/EX2FP32.scala:299:14
+  output        io_out_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:299:14
+  output [31:0] io_out_bits_ctrl_bypassVal	// src/scala/EX2FP32.scala:299:14
+);
+
+  reg          s1Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [8:0]   s1Pipe_rBits_yi;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]   s1Pipe_rBits_yfi;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0]  s1Pipe_rBits_yfj;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]   s1Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg          s1Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0]  s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  wire         s1_ready = ~s1Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  wire [8:0]   _expSigned_T_1 =
+    {1'h0, io_in_bits_y[30:24], io_in_bits_y[23] | ~(|(io_in_bits_y[30:23]))} - 9'h7F;	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :81:69, :83:{27,29}, src/scala/EX2FP32.scala:312:29, :327:34
+  wire         section1 = $signed(_expSigned_T_1) < -9'sh7;	// src/scala/EX2FP32.scala:312:29, :314:28
+  wire [548:0] _sigShifted_T_2 =
+    {518'h0, |(io_in_bits_y[30:23]), io_in_bits_y[22:0], 7'h0} << _expSigned_T_1;	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, src/scala/EX2FP32.scala:312:29, :320:18, :327:54
+  wire [37:0]  sigShifted =
+    $signed(_expSigned_T_1) > -9'sh1
+      ? _sigShifted_T_2[37:0]
+      : {7'h0, |(io_in_bits_y[30:23]), io_in_bits_y[22:0], 7'h0} >> 9'h0 - _expSigned_T_1;	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, src/scala/EX2FP32.scala:312:29, :320:18, :326:24, :327:{23,34,54,87,91}
+  wire         fracLowIsZero = sigShifted[22:0] == 23'h0;	// src/scala/EX2FP32.scala:327:23, :331:33, :332:31, :335:26
+  wire [3:0]   _GEN =
+    {{sigShifted[5:4], sigShifted[7]} & 3'h5, 1'h0} | {sigShifted[7:6], sigShifted[9:8]}
+    & 4'h5;	// src/main/scala/chisel3/util/Mux.scala:50:70, src/scala/EX2FP32.scala:327:{23,34}, :331:33, :333:46
+  wire [4:0]   lzdCount =
+    sigShifted[22]
+      ? 5'h0
+      : sigShifted[21]
+          ? 5'h1
+          : sigShifted[20]
+              ? 5'h2
+              : sigShifted[19]
+                  ? 5'h3
+                  : sigShifted[18]
+                      ? 5'h4
+                      : sigShifted[17]
+                          ? 5'h5
+                          : sigShifted[16]
+                              ? 5'h6
+                              : sigShifted[15]
+                                  ? 5'h7
+                                  : sigShifted[14]
+                                      ? 5'h8
+                                      : sigShifted[13]
+                                          ? 5'h9
+                                          : sigShifted[12]
+                                              ? 5'hA
+                                              : sigShifted[11]
+                                                  ? 5'hB
+                                                  : sigShifted[10]
+                                                      ? 5'hC
+                                                      : sigShifted[9]
+                                                          ? 5'hD
+                                                          : _GEN[0]
+                                                              ? 5'hE
+                                                              : _GEN[1]
+                                                                  ? 5'hF
+                                                                  : _GEN[2]
+                                                                      ? 5'h10
+                                                                      : _GEN[3]
+                                                                          ? 5'h11
+                                                                          : sigShifted[4]
+                                                                              ? 5'h12
+                                                                              : sigShifted[3]
+                                                                                  ? 5'h13
+                                                                                  : sigShifted[2]
+                                                                                      ? 5'h14
+                                                                                      : sigShifted[1]
+                                                                                          ? 5'h15
+                                                                                          : 5'h16;	// src/main/scala/chisel3/util/Mux.scala:50:70, src/main/scala/chisel3/util/OneHot.scala:48:45, src/scala/EX2FP32.scala:327:23, :331:33, :333:46
+  wire [53:0]  _mantissa_T_2 = {31'h0, sigShifted[22:0]} << lzdCount + 5'h1;	// src/main/scala/chisel3/util/Mux.scala:50:70, src/scala/EX2FP32.scala:327:23, :331:33, :335:{63,76}
+  wire         _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:288:7
+    if (reset)	// src/scala/EX2FP32.scala:288:7
+      s1Pipe_rValid <= 1'h0;	// src/scala/EX2FP32.scala:24:29, :327:34
+    else	// src/scala/EX2FP32.scala:288:7
+      s1Pipe_rValid <= _s1Pipe_T | ~(io_out_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
+    if (_s1Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
+      s1Pipe_rBits_yi <= {io_in_bits_y[31], section1 ? 8'h0 : sigShifted[37:30]};	// dependencies/fudian/src/main/scala/fudian/package.scala:59:19, src/scala/EX2FP32.scala:25:25, :314:28, :319:18, :327:23, :329:33, :336:26, :344:22
+      s1Pipe_rBits_yfi <= {io_in_bits_y[31], section1 ? 7'h0 : sigShifted[29:23]};	// dependencies/fudian/src/main/scala/fudian/package.scala:59:19, src/scala/EX2FP32.scala:25:25, :314:28, :320:18, :327:23, :330:33, :337:26, :345:22
+      s1Pipe_rBits_yfj <=
+        section1
+          ? io_in_bits_y
+          : {io_in_bits_y[31],
+             fracLowIsZero ? 8'h0 : 8'h77 - {3'h0, lzdCount},
+             fracLowIsZero ? 23'h0 : _mantissa_T_2[22:0]};	// dependencies/fudian/src/main/scala/fudian/package.scala:59:19, src/main/scala/chisel3/util/Mux.scala:50:70, src/scala/EX2FP32.scala:25:25, :314:28, :319:18, :332:31, :334:{26,64}, :335:{26,63,83}, :338:26, :346:22
+      s1Pipe_rBits_ctrl_rm <= io_in_bits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_bypass <= io_in_bits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_bypassVal <= io_in_bits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+    end
+  end // always @(posedge)
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:288:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:288:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:288:7
+    `endif // FIRRTL_BEFORE_INITIAL
+    logic [31:0] _RANDOM[0:2];	// src/scala/EX2FP32.scala:288:7
+    initial begin	// src/scala/EX2FP32.scala:288:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:288:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:288:7
+      `endif // INIT_RANDOM_PROLOG_
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:288:7
+        for (logic [1:0] i = 2'h0; i < 2'h3; i += 2'h1) begin
+          _RANDOM[i] = `RANDOM;	// src/scala/EX2FP32.scala:288:7
+        end	// src/scala/EX2FP32.scala:288:7
+        s1Pipe_rValid = _RANDOM[2'h0][0];	// src/scala/EX2FP32.scala:24:29, :288:7
+        s1Pipe_rBits_yi = _RANDOM[2'h0][9:1];	// src/scala/EX2FP32.scala:24:29, :25:25, :288:7
+        s1Pipe_rBits_yfi = _RANDOM[2'h0][17:10];	// src/scala/EX2FP32.scala:24:29, :25:25, :288:7
+        s1Pipe_rBits_yfj = {_RANDOM[2'h0][31:18], _RANDOM[2'h1][17:0]};	// src/scala/EX2FP32.scala:24:29, :25:25, :288:7
+        s1Pipe_rBits_ctrl_rm = _RANDOM[2'h1][20:18];	// src/scala/EX2FP32.scala:25:25, :288:7
+        s1Pipe_rBits_ctrl_bypass = _RANDOM[2'h1][21];	// src/scala/EX2FP32.scala:25:25, :288:7
+        s1Pipe_rBits_ctrl_bypassVal = {_RANDOM[2'h1][31:22], _RANDOM[2'h2][21:0]};	// src/scala/EX2FP32.scala:25:25, :288:7
+      `endif // RANDOMIZE_REG_INIT
+    end // initial
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:288:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:288:7
+    `endif // FIRRTL_AFTER_INITIAL
+  `endif // ENABLE_INITIAL_REG_
+  assign io_in_ready = s1_ready;	// src/scala/EX2FP32.scala:27:43, :288:7
+  assign io_out_valid = s1Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :288:7
+  assign io_out_bits_yi = s1Pipe_rBits_yi;	// src/scala/EX2FP32.scala:25:25, :288:7
+  assign io_out_bits_yfi = s1Pipe_rBits_yfi;	// src/scala/EX2FP32.scala:25:25, :288:7
+  assign io_out_bits_yfj = s1Pipe_rBits_yfj;	// src/scala/EX2FP32.scala:25:25, :288:7
+  assign io_out_bits_ctrl_rm = s1Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25, :288:7
+  assign io_out_bits_ctrl_bypass = s1Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25, :288:7
+  assign io_out_bits_ctrl_bypassVal = s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :288:7
 endmodule
 
 module C22(	// dependencies/fudian/src/main/scala/fudian/utils/CSA.scala:44:7
@@ -3506,656 +3649,261 @@ module FMUL_s3(	// dependencies/fudian/src/main/scala/fudian/FMUL.scala:166:7
   assign io_to_fadd_rm = io_in_rm;	// dependencies/fudian/src/main/scala/fudian/FMUL.scala:166:7
 endmodule
 
-module MULFP32(	// src/scala/EXPFP32.scala:57:7
-  input         clock,	// src/scala/EXPFP32.scala:57:7
-                reset,	// src/scala/EXPFP32.scala:57:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_a,	// src/scala/EXPFP32.scala:73:14
-  input  [2:0]  io_in_bits_rm,	// src/scala/EXPFP32.scala:73:14
-                io_in_bits_ctrl_rm,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:73:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:73:14
-  output [31:0] io_out_bits_result,	// src/scala/EXPFP32.scala:73:14
-  output [2:0]  io_out_bits_ctrl_rm,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  output [31:0] io_out_bits_ctrl_bypassVal	// src/scala/EXPFP32.scala:73:14
+module MULFP32(	// src/scala/EX2FP32.scala:56:7
+  input         clock,	// src/scala/EX2FP32.scala:56:7
+                reset,	// src/scala/EX2FP32.scala:56:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:72:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:72:14
+  input  [31:0] io_in_bits_a,	// src/scala/EX2FP32.scala:72:14
+  input  [2:0]  io_in_bits_rm,	// src/scala/EX2FP32.scala:72:14
+                io_in_bits_ctrl_topCtrl_rm,	// src/scala/EX2FP32.scala:72:14
+  input         io_in_bits_ctrl_topCtrl_bypass,	// src/scala/EX2FP32.scala:72:14
+  input  [31:0] io_in_bits_ctrl_topCtrl_bypassVal,	// src/scala/EX2FP32.scala:72:14
+  input  [8:0]  io_in_bits_ctrl_topCtrl_yi,	// src/scala/EX2FP32.scala:72:14
+  input  [7:0]  io_in_bits_ctrl_topCtrl_yfi,	// src/scala/EX2FP32.scala:72:14
+  input  [31:0] io_in_bits_ctrl_topCtrl_yfj,	// src/scala/EX2FP32.scala:72:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:72:14
+                io_out_bits_toAdd_fp_prod_sign,	// src/scala/EX2FP32.scala:72:14
+  output [7:0]  io_out_bits_toAdd_fp_prod_exp,	// src/scala/EX2FP32.scala:72:14
+  output [46:0] io_out_bits_toAdd_fp_prod_sig,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_bits_toAdd_inter_flags_isNaN,	// src/scala/EX2FP32.scala:72:14
+                io_out_bits_toAdd_inter_flags_isInf,	// src/scala/EX2FP32.scala:72:14
+                io_out_bits_toAdd_inter_flags_overflow,	// src/scala/EX2FP32.scala:72:14
+  output [2:0]  io_out_bits_toAdd_rm,	// src/scala/EX2FP32.scala:72:14
+                io_out_bits_ctrl_topCtrl_rm,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_bits_ctrl_topCtrl_bypass,	// src/scala/EX2FP32.scala:72:14
+  output [31:0] io_out_bits_ctrl_topCtrl_bypassVal,	// src/scala/EX2FP32.scala:72:14
+  output [8:0]  io_out_bits_ctrl_topCtrl_yi,	// src/scala/EX2FP32.scala:72:14
+  output [7:0]  io_out_bits_ctrl_topCtrl_yfi,	// src/scala/EX2FP32.scala:72:14
+  output [31:0] io_out_bits_ctrl_topCtrl_yfj	// src/scala/EX2FP32.scala:72:14
 );
 
-  wire        s3_ready;	// src/scala/EXPFP32.scala:28:43
-  wire        s2_ready;	// src/scala/EXPFP32.scala:28:43
-  wire [31:0] _mulS3_io_result;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:80:21
-  wire [8:0]  _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:80:21
-  wire [73:0] _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:80:21
-  wire [2:0]  _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:79:21
-  wire [2:0]  _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:79:21
-  wire [49:0] _mul_io_result;	// src/scala/EXPFP32.scala:78:21
-  reg         s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s1Pipe_rBits_mulS1Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_prod_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_shift_amt;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_exp_shifted;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_mulS1Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [49:0] s1Pipe_rBits_prod;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  wire        s1_ready = ~s1Pipe_rValid | s2_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s2Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s2Pipe_rBits_mulS2Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s2Pipe_rBits_mulS2Out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25
-  reg  [73:0] s2Pipe_rBits_mulS2Out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s2Pipe_rBits_mulS2Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s2Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s2Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  assign s2_ready = ~s2Pipe_rValid | s3_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [31:0] s3Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s3Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s3Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  assign s3_ready = ~s3Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43
-  wire        _s2Pipe_T = s2_ready & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  wire        _s3Pipe_T = s3_ready & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:57:7
-    if (reset) begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s2Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s3Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
+  wire        s3_ready;	// src/scala/EX2FP32.scala:27:43
+  wire        s2_ready;	// src/scala/EX2FP32.scala:27:43
+  wire        _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EX2FP32.scala:80:21
+  wire [7:0]  _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EX2FP32.scala:80:21
+  wire [46:0] _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EX2FP32.scala:80:21
+  wire [2:0]  _mulS3_io_to_fadd_rm;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS2_io_out_special_case_valid;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_raw_out_sign;	// src/scala/EX2FP32.scala:79:21
+  wire [8:0]  _mulS2_io_out_raw_out_exp;	// src/scala/EX2FP32.scala:79:21
+  wire [73:0] _mulS2_io_out_raw_out_sig;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_early_overflow;	// src/scala/EX2FP32.scala:79:21
+  wire [2:0]  _mulS2_io_out_rm;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_early_overflow;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_prod_sign;	// src/scala/EX2FP32.scala:78:21
+  wire [8:0]  _mulS1_io_out_shift_amt;	// src/scala/EX2FP32.scala:78:21
+  wire [8:0]  _mulS1_io_out_exp_shifted;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_may_be_subnormal;	// src/scala/EX2FP32.scala:78:21
+  wire [2:0]  _mulS1_io_out_rm;	// src/scala/EX2FP32.scala:78:21
+  wire [49:0] _mul_io_result;	// src/scala/EX2FP32.scala:77:21
+  reg         s1Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s1Pipe_rBits_mulS1Out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_early_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_prod_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_mulS1Out_shift_amt;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_mulS1Out_exp_shifted;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_may_be_subnormal;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s1Pipe_rBits_mulS1Out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg  [49:0] s1Pipe_rBits_prod;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s1Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s1Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25
+  wire        s1_ready = ~s1Pipe_rValid | s2_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg         s2Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s2Pipe_rBits_mulS2Out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_raw_out_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s2Pipe_rBits_mulS2Out_raw_out_exp;	// src/scala/EX2FP32.scala:25:25
+  reg  [73:0] s2Pipe_rBits_mulS2Out_raw_out_sig;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_early_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s2Pipe_rBits_mulS2Out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s2Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s2Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25
+  assign s2_ready = ~s2Pipe_rValid | s3_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg         s3Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EX2FP32.scala:25:25
+  reg  [46:0] s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s3Pipe_rBits_toAdd_rm;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s3Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s3Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25
+  assign s3_ready = ~s3Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43
+  wire        _s2Pipe_T = s2_ready & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  wire        _s3Pipe_T = s3_ready & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:56:7
+    if (reset) begin	// src/scala/EX2FP32.scala:56:7
+      s1Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
+      s2Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
+      s3Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
     end
-    else begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= _s1Pipe_T | ~(s2_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s2Pipe_rValid <= _s2Pipe_T | ~(s3_ready & s2Pipe_rValid) & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s3Pipe_rValid <= _s3Pipe_T | ~(io_out_ready & s3Pipe_rValid) & s3Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
+    else begin	// src/scala/EX2FP32.scala:56:7
+      s1Pipe_rValid <= _s1Pipe_T | ~(s2_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s2Pipe_rValid <= _s2Pipe_T | ~(s3_ready & s2Pipe_rValid) & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s3Pipe_rValid <= _s3Pipe_T | ~(io_out_ready & s3Pipe_rValid) & s3Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
     end
     if (_s1Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s1Pipe_rBits_mulS1Out_special_case_valid <= _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_nan <= _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_inf <= _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :79:21
+      s1Pipe_rBits_mulS1Out_special_case_valid <= _mulS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_special_case_bits_nan <= _mulS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_special_case_bits_inf <= _mulS1_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25, :78:21
       s1Pipe_rBits_mulS1Out_special_case_bits_hasZero <=
-        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_early_overflow <= _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_prod_sign <= _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_shift_amt <= _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_exp_shifted <= _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_may_be_subnormal <= _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_rm <= _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_prod <= _mul_io_result;	// src/scala/EXPFP32.scala:26:25, :78:21
-      s1Pipe_rBits_ctrl_rm <= io_in_bits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_bypass <= io_in_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_bypassVal <= io_in_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
+        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_early_overflow <= _mulS1_io_out_early_overflow;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_prod_sign <= _mulS1_io_out_prod_sign;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_shift_amt <= _mulS1_io_out_shift_amt;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_exp_shifted <= _mulS1_io_out_exp_shifted;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_may_be_subnormal <= _mulS1_io_out_may_be_subnormal;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_rm <= _mulS1_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_prod <= _mul_io_result;	// src/scala/EX2FP32.scala:25:25, :77:21
+      s1Pipe_rBits_ctrl_topCtrl_rm <= io_in_bits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_bypass <= io_in_bits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_bypassVal <= io_in_bits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_yi <= io_in_bits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_yfi <= io_in_bits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_yfj <= io_in_bits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25
     end
     if (_s2Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s2Pipe_rBits_mulS2Out_special_case_valid <= _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_nan <= _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_inf <= _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :80:21
+      s2Pipe_rBits_mulS2Out_special_case_valid <= _mulS2_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_special_case_bits_nan <= _mulS2_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_special_case_bits_inf <= _mulS2_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25, :79:21
       s2Pipe_rBits_mulS2Out_special_case_bits_hasZero <=
-        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sign <= _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_exp <= _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sig <= _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_early_overflow <= _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_rm <= _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_ctrl_rm <= s1Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_bypass <= s1Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_bypassVal <= s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
+        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_sign <= _mulS2_io_out_raw_out_sign;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_exp <= _mulS2_io_out_raw_out_exp;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_sig <= _mulS2_io_out_raw_out_sig;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_early_overflow <= _mulS2_io_out_early_overflow;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_rm <= _mulS2_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_ctrl_topCtrl_rm <= s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_bypass <= s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_bypassVal <= s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_yi <= s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_yfi <= s1Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_yfj <= s1Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25
     end
     if (_s3Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s3Pipe_rBits_result <= _mulS3_io_result;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_ctrl_rm <= s2Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_bypass <= s2Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_bypassVal <= s2Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
+      s3Pipe_rBits_toAdd_fp_prod_sign <= _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_fp_prod_exp <= _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_fp_prod_sig <= _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_inter_flags_isNaN <= _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_inter_flags_isInf <= _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_inter_flags_overflow <= _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_rm <= _mulS3_io_to_fadd_rm;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_ctrl_topCtrl_rm <= s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_bypass <= s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_bypassVal <= s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_yi <= s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_yfi <= s2Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_yfj <= s2Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25
     end
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:57:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:56:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:56:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:56:7
     `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:11];	// src/scala/EXPFP32.scala:57:7
-    initial begin	// src/scala/EXPFP32.scala:57:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
+    logic [31:0] _RANDOM[0:19];	// src/scala/EX2FP32.scala:56:7
+    initial begin	// src/scala/EX2FP32.scala:56:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:56:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:56:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:57:7
-        for (logic [3:0] i = 4'h0; i < 4'hC; i += 4'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:57:7
-        end	// src/scala/EXPFP32.scala:57:7
-        s1Pipe_rValid = _RANDOM[4'h0][0];	// src/scala/EXPFP32.scala:25:29, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_valid = _RANDOM[4'h0][1];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_nan = _RANDOM[4'h0][2];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_inf = _RANDOM[4'h0][3];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_hasZero = _RANDOM[4'h0][5];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_early_overflow = _RANDOM[4'h0][6];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_prod_sign = _RANDOM[4'h0][7];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_shift_amt = _RANDOM[4'h0][16:8];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_exp_shifted = _RANDOM[4'h0][25:17];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_may_be_subnormal = _RANDOM[4'h0][26];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_rm = _RANDOM[4'h0][29:27];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_prod = {_RANDOM[4'h0][31:30], _RANDOM[4'h1], _RANDOM[4'h2][15:0]};	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_ctrl_rm = _RANDOM[4'h2][18:16];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_bypass = _RANDOM[4'h2][19];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h2][31:20], _RANDOM[4'h3][19:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rValid = _RANDOM[4'h3][20];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_valid = _RANDOM[4'h3][21];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_nan = _RANDOM[4'h3][22];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_inf = _RANDOM[4'h3][23];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_hasZero = _RANDOM[4'h3][25];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_sign = _RANDOM[4'h3][26];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_exp = {_RANDOM[4'h3][31:27], _RANDOM[4'h4][3:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_sig =
-          {_RANDOM[4'h4][31:4], _RANDOM[4'h5], _RANDOM[4'h6][13:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_early_overflow = _RANDOM[4'h6][14];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_rm = _RANDOM[4'h6][17:15];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_rm = _RANDOM[4'h6][20:18];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_bypass = _RANDOM[4'h6][21];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h6][31:22], _RANDOM[4'h7][21:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rValid = _RANDOM[4'h7][22];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s3Pipe_rBits_result = {_RANDOM[4'h7][31:23], _RANDOM[4'h8][22:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_rm = _RANDOM[4'hA][24:22];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_bypass = _RANDOM[4'hA][25];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'hA][31:26], _RANDOM[4'hB][25:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-      `endif // RANDOMIZE_REG_INIT
-    end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
-    `endif // FIRRTL_AFTER_INITIAL
-  `endif // ENABLE_INITIAL_REG_
-  Multiplier mul (	// src/scala/EXPFP32.scala:78:21
-    .io_a      ({1'h0, |(io_in_bits_a[30:23]), io_in_bits_a[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EXPFP32.scala:89:12
-    .io_b      (25'hB8AA3B),	// src/scala/EXPFP32.scala:78:21
-    .io_result (_mul_io_result)
-  );
-  FMUL_s1 mulS1 (	// src/scala/EXPFP32.scala:79:21
-    .io_a                             (io_in_bits_a),
-    .io_b                             (32'h3FB8AA3B),	// src/scala/EXPFP32.scala:73:14, :79:21
-    .io_rm                            (io_in_bits_rm),
-    .io_out_special_case_valid        (_mulS1_io_out_special_case_valid),
-    .io_out_special_case_bits_nan     (_mulS1_io_out_special_case_bits_nan),
-    .io_out_special_case_bits_inf     (_mulS1_io_out_special_case_bits_inf),
-    .io_out_special_case_bits_hasZero (_mulS1_io_out_special_case_bits_hasZero),
-    .io_out_early_overflow            (_mulS1_io_out_early_overflow),
-    .io_out_prod_sign                 (_mulS1_io_out_prod_sign),
-    .io_out_shift_amt                 (_mulS1_io_out_shift_amt),
-    .io_out_exp_shifted               (_mulS1_io_out_exp_shifted),
-    .io_out_may_be_subnormal          (_mulS1_io_out_may_be_subnormal),
-    .io_out_rm                        (_mulS1_io_out_rm)
-  );
-  FMUL_s2 mulS2 (	// src/scala/EXPFP32.scala:80:21
-    .io_in_special_case_valid         (s1Pipe_rBits_mulS1Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan      (s1Pipe_rBits_mulS1Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf      (s1Pipe_rBits_mulS1Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero  (s1Pipe_rBits_mulS1Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow             (s1Pipe_rBits_mulS1Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_prod_sign                  (s1Pipe_rBits_mulS1Out_prod_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_shift_amt                  (s1Pipe_rBits_mulS1Out_shift_amt),	// src/scala/EXPFP32.scala:26:25
-    .io_in_exp_shifted                (s1Pipe_rBits_mulS1Out_exp_shifted),	// src/scala/EXPFP32.scala:26:25
-    .io_in_may_be_subnormal           (s1Pipe_rBits_mulS1Out_may_be_subnormal),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                         (s1Pipe_rBits_mulS1Out_rm),	// src/scala/EXPFP32.scala:26:25
-    .io_prod                          (s1Pipe_rBits_prod[47:0]),	// src/scala/EXPFP32.scala:26:25, :106:17
-    .io_out_special_case_valid        (_mulS2_io_out_special_case_valid),
-    .io_out_special_case_bits_nan     (_mulS2_io_out_special_case_bits_nan),
-    .io_out_special_case_bits_inf     (_mulS2_io_out_special_case_bits_inf),
-    .io_out_special_case_bits_hasZero (_mulS2_io_out_special_case_bits_hasZero),
-    .io_out_raw_out_sign              (_mulS2_io_out_raw_out_sign),
-    .io_out_raw_out_exp               (_mulS2_io_out_raw_out_exp),
-    .io_out_raw_out_sig               (_mulS2_io_out_raw_out_sig),
-    .io_out_early_overflow            (_mulS2_io_out_early_overflow),
-    .io_out_rm                        (_mulS2_io_out_rm)
-  );
-  FMUL_s3 mulS3 (	// src/scala/EXPFP32.scala:81:21
-    .io_in_special_case_valid        (s2Pipe_rBits_mulS2Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan     (s2Pipe_rBits_mulS2Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf     (s2Pipe_rBits_mulS2Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero (s2Pipe_rBits_mulS2Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sign              (s2Pipe_rBits_mulS2Out_raw_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_exp               (s2Pipe_rBits_mulS2Out_raw_out_exp),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sig               (s2Pipe_rBits_mulS2Out_raw_out_sig),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow            (s2Pipe_rBits_mulS2Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                        (s2Pipe_rBits_mulS2Out_rm),	// src/scala/EXPFP32.scala:26:25
-    .io_result                       (_mulS3_io_result),
-    .io_to_fadd_fp_prod_sign         (/* unused */),
-    .io_to_fadd_fp_prod_exp          (/* unused */),
-    .io_to_fadd_fp_prod_sig          (/* unused */),
-    .io_to_fadd_inter_flags_isNaN    (/* unused */),
-    .io_to_fadd_inter_flags_isInf    (/* unused */),
-    .io_to_fadd_inter_flags_overflow (/* unused */),
-    .io_to_fadd_rm                   (/* unused */)
-  );
-  assign io_in_ready = s1_ready;	// src/scala/EXPFP32.scala:28:43, :57:7
-  assign io_out_valid = s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :57:7
-  assign io_out_bits_result = s3Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_rm = s3Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_bypass = s3Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_bypassVal = s3Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :57:7
-endmodule
-
-module DecomposeFP32(	// src/scala/EXPFP32.scala:289:7
-  input         clock,	// src/scala/EXPFP32.scala:289:7
-                reset,	// src/scala/EXPFP32.scala:289:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:300:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:300:14
-  input  [31:0] io_in_bits_y,	// src/scala/EXPFP32.scala:300:14
-  input  [2:0]  io_in_bits_ctrl_rm,	// src/scala/EXPFP32.scala:300:14
-  input         io_in_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:300:14
-  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:300:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:300:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:300:14
-  output [8:0]  io_out_bits_yi,	// src/scala/EXPFP32.scala:300:14
-  output [7:0]  io_out_bits_yfi,	// src/scala/EXPFP32.scala:300:14
-  output [31:0] io_out_bits_yfj,	// src/scala/EXPFP32.scala:300:14
-  output [2:0]  io_out_bits_ctrl_rm,	// src/scala/EXPFP32.scala:300:14
-  output        io_out_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:300:14
-  output [31:0] io_out_bits_ctrl_bypassVal	// src/scala/EXPFP32.scala:300:14
-);
-
-  reg          s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [8:0]   s1Pipe_rBits_yi;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]   s1Pipe_rBits_yfi;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0]  s1Pipe_rBits_yfj;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]   s1Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg          s1Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0]  s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  wire         s1_ready = ~s1Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire [8:0]   _expSigned_T_1 =
-    {1'h0, io_in_bits_y[30:24], io_in_bits_y[23] | ~(|(io_in_bits_y[30:23]))} - 9'h7F;	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :81:69, :83:{27,29}, src/scala/EXPFP32.scala:313:29, :328:34
-  wire         section1 = $signed(_expSigned_T_1) < -9'sh7;	// src/scala/EXPFP32.scala:313:29, :315:28
-  wire [548:0] _sigShifted_T_2 =
-    {518'h0, |(io_in_bits_y[30:23]), io_in_bits_y[22:0], 7'h0} << _expSigned_T_1;	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, src/scala/EXPFP32.scala:313:29, :321:18, :328:54
-  wire [37:0]  sigShifted =
-    $signed(_expSigned_T_1) > -9'sh1
-      ? _sigShifted_T_2[37:0]
-      : {7'h0, |(io_in_bits_y[30:23]), io_in_bits_y[22:0], 7'h0} >> 9'h0 - _expSigned_T_1;	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, src/scala/EXPFP32.scala:313:29, :321:18, :327:24, :328:{23,34,54,87,91}
-  wire         fracLowIsZero = sigShifted[22:0] == 23'h0;	// src/scala/EXPFP32.scala:328:23, :332:33, :333:31, :336:26
-  wire [3:0]   _GEN =
-    {{sigShifted[5:4], sigShifted[7]} & 3'h5, 1'h0} | {sigShifted[7:6], sigShifted[9:8]}
-    & 4'h5;	// src/main/scala/chisel3/util/Mux.scala:50:70, src/scala/EXPFP32.scala:328:{23,34}, :332:33, :334:46
-  wire [4:0]   lzdCount =
-    sigShifted[22]
-      ? 5'h0
-      : sigShifted[21]
-          ? 5'h1
-          : sigShifted[20]
-              ? 5'h2
-              : sigShifted[19]
-                  ? 5'h3
-                  : sigShifted[18]
-                      ? 5'h4
-                      : sigShifted[17]
-                          ? 5'h5
-                          : sigShifted[16]
-                              ? 5'h6
-                              : sigShifted[15]
-                                  ? 5'h7
-                                  : sigShifted[14]
-                                      ? 5'h8
-                                      : sigShifted[13]
-                                          ? 5'h9
-                                          : sigShifted[12]
-                                              ? 5'hA
-                                              : sigShifted[11]
-                                                  ? 5'hB
-                                                  : sigShifted[10]
-                                                      ? 5'hC
-                                                      : sigShifted[9]
-                                                          ? 5'hD
-                                                          : _GEN[0]
-                                                              ? 5'hE
-                                                              : _GEN[1]
-                                                                  ? 5'hF
-                                                                  : _GEN[2]
-                                                                      ? 5'h10
-                                                                      : _GEN[3]
-                                                                          ? 5'h11
-                                                                          : sigShifted[4]
-                                                                              ? 5'h12
-                                                                              : sigShifted[3]
-                                                                                  ? 5'h13
-                                                                                  : sigShifted[2]
-                                                                                      ? 5'h14
-                                                                                      : sigShifted[1]
-                                                                                          ? 5'h15
-                                                                                          : 5'h16;	// src/main/scala/chisel3/util/Mux.scala:50:70, src/main/scala/chisel3/util/OneHot.scala:48:45, src/scala/EXPFP32.scala:328:23, :332:33, :334:46
-  wire [53:0]  _mantissa_T_2 = {31'h0, sigShifted[22:0]} << lzdCount + 5'h1;	// src/main/scala/chisel3/util/Mux.scala:50:70, src/scala/EXPFP32.scala:328:23, :332:33, :336:{63,76}
-  wire         _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:289:7
-    if (reset)	// src/scala/EXPFP32.scala:289:7
-      s1Pipe_rValid <= 1'h0;	// src/scala/EXPFP32.scala:25:29, :328:34
-    else	// src/scala/EXPFP32.scala:289:7
-      s1Pipe_rValid <= _s1Pipe_T | ~(io_out_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
-    if (_s1Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s1Pipe_rBits_yi <= {io_in_bits_y[31], section1 ? 8'h0 : sigShifted[37:30]};	// dependencies/fudian/src/main/scala/fudian/package.scala:59:19, src/scala/EXPFP32.scala:26:25, :315:28, :320:18, :328:23, :330:33, :337:26, :345:22
-      s1Pipe_rBits_yfi <= {io_in_bits_y[31], section1 ? 7'h0 : sigShifted[29:23]};	// dependencies/fudian/src/main/scala/fudian/package.scala:59:19, src/scala/EXPFP32.scala:26:25, :315:28, :321:18, :328:23, :331:33, :338:26, :346:22
-      s1Pipe_rBits_yfj <=
-        section1
-          ? io_in_bits_y
-          : {io_in_bits_y[31],
-             fracLowIsZero ? 8'h0 : 8'h77 - {3'h0, lzdCount},
-             fracLowIsZero ? 23'h0 : _mantissa_T_2[22:0]};	// dependencies/fudian/src/main/scala/fudian/package.scala:59:19, src/main/scala/chisel3/util/Mux.scala:50:70, src/scala/EXPFP32.scala:26:25, :315:28, :320:18, :333:31, :335:{26,64}, :336:{26,63,83}, :339:26, :347:22
-      s1Pipe_rBits_ctrl_rm <= io_in_bits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_bypass <= io_in_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_bypassVal <= io_in_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-    end
-  end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:289:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:289:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:289:7
-    `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:2];	// src/scala/EXPFP32.scala:289:7
-    initial begin	// src/scala/EXPFP32.scala:289:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:289:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:289:7
-      `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:289:7
-        for (logic [1:0] i = 2'h0; i < 2'h3; i += 2'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:289:7
-        end	// src/scala/EXPFP32.scala:289:7
-        s1Pipe_rValid = _RANDOM[2'h0][0];	// src/scala/EXPFP32.scala:25:29, :289:7
-        s1Pipe_rBits_yi = _RANDOM[2'h0][9:1];	// src/scala/EXPFP32.scala:25:29, :26:25, :289:7
-        s1Pipe_rBits_yfi = _RANDOM[2'h0][17:10];	// src/scala/EXPFP32.scala:25:29, :26:25, :289:7
-        s1Pipe_rBits_yfj = {_RANDOM[2'h0][31:18], _RANDOM[2'h1][17:0]};	// src/scala/EXPFP32.scala:25:29, :26:25, :289:7
-        s1Pipe_rBits_ctrl_rm = _RANDOM[2'h1][20:18];	// src/scala/EXPFP32.scala:26:25, :289:7
-        s1Pipe_rBits_ctrl_bypass = _RANDOM[2'h1][21];	// src/scala/EXPFP32.scala:26:25, :289:7
-        s1Pipe_rBits_ctrl_bypassVal = {_RANDOM[2'h1][31:22], _RANDOM[2'h2][21:0]};	// src/scala/EXPFP32.scala:26:25, :289:7
-      `endif // RANDOMIZE_REG_INIT
-    end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:289:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:289:7
-    `endif // FIRRTL_AFTER_INITIAL
-  `endif // ENABLE_INITIAL_REG_
-  assign io_in_ready = s1_ready;	// src/scala/EXPFP32.scala:28:43, :289:7
-  assign io_out_valid = s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :289:7
-  assign io_out_bits_yi = s1Pipe_rBits_yi;	// src/scala/EXPFP32.scala:26:25, :289:7
-  assign io_out_bits_yfi = s1Pipe_rBits_yfi;	// src/scala/EXPFP32.scala:26:25, :289:7
-  assign io_out_bits_yfj = s1Pipe_rBits_yfj;	// src/scala/EXPFP32.scala:26:25, :289:7
-  assign io_out_bits_ctrl_rm = s1Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25, :289:7
-  assign io_out_bits_ctrl_bypass = s1Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25, :289:7
-  assign io_out_bits_ctrl_bypassVal = s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :289:7
-endmodule
-
-module MULFP32_1(	// src/scala/EXPFP32.scala:57:7
-  input         clock,	// src/scala/EXPFP32.scala:57:7
-                reset,	// src/scala/EXPFP32.scala:57:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_a,	// src/scala/EXPFP32.scala:73:14
-  input  [2:0]  io_in_bits_rm,	// src/scala/EXPFP32.scala:73:14
-                io_in_bits_ctrl_topCtrl_rm,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_bits_ctrl_topCtrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_ctrl_topCtrl_bypassVal,	// src/scala/EXPFP32.scala:73:14
-  input  [8:0]  io_in_bits_ctrl_topCtrl_yi,	// src/scala/EXPFP32.scala:73:14
-  input  [7:0]  io_in_bits_ctrl_topCtrl_yfi,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_ctrl_topCtrl_yfj,	// src/scala/EXPFP32.scala:73:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:73:14
-                io_out_bits_toAdd_fp_prod_sign,	// src/scala/EXPFP32.scala:73:14
-  output [7:0]  io_out_bits_toAdd_fp_prod_exp,	// src/scala/EXPFP32.scala:73:14
-  output [46:0] io_out_bits_toAdd_fp_prod_sig,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_bits_toAdd_inter_flags_isNaN,	// src/scala/EXPFP32.scala:73:14
-                io_out_bits_toAdd_inter_flags_isInf,	// src/scala/EXPFP32.scala:73:14
-                io_out_bits_toAdd_inter_flags_overflow,	// src/scala/EXPFP32.scala:73:14
-  output [2:0]  io_out_bits_toAdd_rm,	// src/scala/EXPFP32.scala:73:14
-                io_out_bits_ctrl_topCtrl_rm,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_bits_ctrl_topCtrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  output [31:0] io_out_bits_ctrl_topCtrl_bypassVal,	// src/scala/EXPFP32.scala:73:14
-  output [8:0]  io_out_bits_ctrl_topCtrl_yi,	// src/scala/EXPFP32.scala:73:14
-  output [7:0]  io_out_bits_ctrl_topCtrl_yfi,	// src/scala/EXPFP32.scala:73:14
-  output [31:0] io_out_bits_ctrl_topCtrl_yfj	// src/scala/EXPFP32.scala:73:14
-);
-
-  wire        s3_ready;	// src/scala/EXPFP32.scala:28:43
-  wire        s2_ready;	// src/scala/EXPFP32.scala:28:43
-  wire        _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EXPFP32.scala:81:21
-  wire [7:0]  _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EXPFP32.scala:81:21
-  wire [46:0] _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EXPFP32.scala:81:21
-  wire [2:0]  _mulS3_io_to_fadd_rm;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:80:21
-  wire [8:0]  _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:80:21
-  wire [73:0] _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:80:21
-  wire [2:0]  _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:79:21
-  wire [2:0]  _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:79:21
-  wire [49:0] _mul_io_result;	// src/scala/EXPFP32.scala:78:21
-  reg         s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s1Pipe_rBits_mulS1Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_prod_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_shift_amt;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_exp_shifted;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_mulS1Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [49:0] s1Pipe_rBits_prod;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s1Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s1Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25
-  wire        s1_ready = ~s1Pipe_rValid | s2_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s2Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s2Pipe_rBits_mulS2Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s2Pipe_rBits_mulS2Out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25
-  reg  [73:0] s2Pipe_rBits_mulS2Out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s2Pipe_rBits_mulS2Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s2Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s2Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25
-  assign s2_ready = ~s2Pipe_rValid | s3_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EXPFP32.scala:26:25
-  reg  [46:0] s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s3Pipe_rBits_toAdd_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s3Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s3Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25
-  assign s3_ready = ~s3Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43
-  wire        _s2Pipe_T = s2_ready & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  wire        _s3Pipe_T = s3_ready & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:57:7
-    if (reset) begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s2Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s3Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-    end
-    else begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= _s1Pipe_T | ~(s2_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s2Pipe_rValid <= _s2Pipe_T | ~(s3_ready & s2Pipe_rValid) & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s3Pipe_rValid <= _s3Pipe_T | ~(io_out_ready & s3Pipe_rValid) & s3Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
-    end
-    if (_s1Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s1Pipe_rBits_mulS1Out_special_case_valid <= _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_nan <= _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_inf <= _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_hasZero <=
-        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_early_overflow <= _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_prod_sign <= _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_shift_amt <= _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_exp_shifted <= _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_may_be_subnormal <= _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_rm <= _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_prod <= _mul_io_result;	// src/scala/EXPFP32.scala:26:25, :78:21
-      s1Pipe_rBits_ctrl_topCtrl_rm <= io_in_bits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_bypass <= io_in_bits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_bypassVal <= io_in_bits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_yi <= io_in_bits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_yfi <= io_in_bits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_yfj <= io_in_bits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25
-    end
-    if (_s2Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s2Pipe_rBits_mulS2Out_special_case_valid <= _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_nan <= _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_inf <= _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_hasZero <=
-        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sign <= _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_exp <= _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sig <= _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_early_overflow <= _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_rm <= _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_ctrl_topCtrl_rm <= s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_bypass <= s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_bypassVal <= s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_yi <= s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_yfi <= s1Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_yfj <= s1Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25
-    end
-    if (_s3Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s3Pipe_rBits_toAdd_fp_prod_sign <= _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_fp_prod_exp <= _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_fp_prod_sig <= _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_inter_flags_isNaN <= _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_inter_flags_isInf <= _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_inter_flags_overflow <= _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_rm <= _mulS3_io_to_fadd_rm;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_ctrl_topCtrl_rm <= s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_bypass <= s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_bypassVal <= s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_yi <= s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_yfi <= s2Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_yfj <= s2Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25
-    end
-  end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:57:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
-    `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:19];	// src/scala/EXPFP32.scala:57:7
-    initial begin	// src/scala/EXPFP32.scala:57:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
-      `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:57:7
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:56:7
         for (logic [4:0] i = 5'h0; i < 5'h14; i += 5'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:57:7
-        end	// src/scala/EXPFP32.scala:57:7
-        s1Pipe_rValid = _RANDOM[5'h0][0];	// src/scala/EXPFP32.scala:25:29, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_valid = _RANDOM[5'h0][1];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_nan = _RANDOM[5'h0][2];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_inf = _RANDOM[5'h0][3];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_hasZero = _RANDOM[5'h0][5];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_early_overflow = _RANDOM[5'h0][6];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_prod_sign = _RANDOM[5'h0][7];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_shift_amt = _RANDOM[5'h0][16:8];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_exp_shifted = _RANDOM[5'h0][25:17];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_may_be_subnormal = _RANDOM[5'h0][26];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_rm = _RANDOM[5'h0][29:27];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_prod = {_RANDOM[5'h0][31:30], _RANDOM[5'h1], _RANDOM[5'h2][15:0]};	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h3][18:16];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h3][19];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'h3][31:20], _RANDOM[5'h4][19:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'h4][28:20];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_yfi = {_RANDOM[5'h4][31:29], _RANDOM[5'h5][4:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_yfj = {_RANDOM[5'h5][31:5], _RANDOM[5'h6][4:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rValid = _RANDOM[5'h6][5];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_valid = _RANDOM[5'h6][6];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_nan = _RANDOM[5'h6][7];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_inf = _RANDOM[5'h6][8];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_hasZero = _RANDOM[5'h6][10];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_sign = _RANDOM[5'h6][11];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_exp = _RANDOM[5'h6][20:12];	// src/scala/EXPFP32.scala:26:25, :57:7
+          _RANDOM[i] = `RANDOM;	// src/scala/EX2FP32.scala:56:7
+        end	// src/scala/EX2FP32.scala:56:7
+        s1Pipe_rValid = _RANDOM[5'h0][0];	// src/scala/EX2FP32.scala:24:29, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_valid = _RANDOM[5'h0][1];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_nan = _RANDOM[5'h0][2];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_inf = _RANDOM[5'h0][3];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_hasZero = _RANDOM[5'h0][5];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_early_overflow = _RANDOM[5'h0][6];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_prod_sign = _RANDOM[5'h0][7];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_shift_amt = _RANDOM[5'h0][16:8];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_exp_shifted = _RANDOM[5'h0][25:17];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_may_be_subnormal = _RANDOM[5'h0][26];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_rm = _RANDOM[5'h0][29:27];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_prod = {_RANDOM[5'h0][31:30], _RANDOM[5'h1], _RANDOM[5'h2][15:0]};	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h3][18:16];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h3][19];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'h3][31:20], _RANDOM[5'h4][19:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'h4][28:20];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_yfi = {_RANDOM[5'h4][31:29], _RANDOM[5'h5][4:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_yfj = {_RANDOM[5'h5][31:5], _RANDOM[5'h6][4:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rValid = _RANDOM[5'h6][5];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_valid = _RANDOM[5'h6][6];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_nan = _RANDOM[5'h6][7];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_inf = _RANDOM[5'h6][8];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_hasZero = _RANDOM[5'h6][10];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_raw_out_sign = _RANDOM[5'h6][11];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_raw_out_exp = _RANDOM[5'h6][20:12];	// src/scala/EX2FP32.scala:25:25, :56:7
         s2Pipe_rBits_mulS2Out_raw_out_sig =
-          {_RANDOM[5'h6][31:21], _RANDOM[5'h7], _RANDOM[5'h8][30:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_early_overflow = _RANDOM[5'h8][31];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_rm = _RANDOM[5'h9][2:0];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'hA][5:3];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'hA][6];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'hA][31:7], _RANDOM[5'hB][6:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'hB][15:7];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_yfi = _RANDOM[5'hB][23:16];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_yfj = {_RANDOM[5'hB][31:24], _RANDOM[5'hC][23:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rValid = _RANDOM[5'hC][24];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s3Pipe_rBits_toAdd_fp_prod_sign = _RANDOM[5'hD][25];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_fp_prod_exp = {_RANDOM[5'hD][31:26], _RANDOM[5'hE][1:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_fp_prod_sig = {_RANDOM[5'hE][31:2], _RANDOM[5'hF][16:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_inter_flags_isNaN = _RANDOM[5'hF][17];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_inter_flags_isInf = _RANDOM[5'hF][18];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_inter_flags_overflow = _RANDOM[5'hF][20];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_rm = _RANDOM[5'hF][23:21];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h10][26:24];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h10][27];	// src/scala/EXPFP32.scala:26:25, :57:7
+          {_RANDOM[5'h6][31:21], _RANDOM[5'h7], _RANDOM[5'h8][30:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_early_overflow = _RANDOM[5'h8][31];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_rm = _RANDOM[5'h9][2:0];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'hA][5:3];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'hA][6];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'hA][31:7], _RANDOM[5'hB][6:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'hB][15:7];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_yfi = _RANDOM[5'hB][23:16];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_yfj = {_RANDOM[5'hB][31:24], _RANDOM[5'hC][23:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rValid = _RANDOM[5'hC][24];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s3Pipe_rBits_toAdd_fp_prod_sign = _RANDOM[5'hD][25];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_fp_prod_exp = {_RANDOM[5'hD][31:26], _RANDOM[5'hE][1:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_fp_prod_sig = {_RANDOM[5'hE][31:2], _RANDOM[5'hF][16:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_inter_flags_isNaN = _RANDOM[5'hF][17];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_inter_flags_isInf = _RANDOM[5'hF][18];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_inter_flags_overflow = _RANDOM[5'hF][20];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_rm = _RANDOM[5'hF][23:21];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h10][26:24];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h10][27];	// src/scala/EX2FP32.scala:25:25, :56:7
         s3Pipe_rBits_ctrl_topCtrl_bypassVal =
-          {_RANDOM[5'h10][31:28], _RANDOM[5'h11][27:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_yi = {_RANDOM[5'h11][31:28], _RANDOM[5'h12][4:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_yfi = _RANDOM[5'h12][12:5];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_yfj = {_RANDOM[5'h12][31:13], _RANDOM[5'h13][12:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
+          {_RANDOM[5'h10][31:28], _RANDOM[5'h11][27:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_yi = {_RANDOM[5'h11][31:28], _RANDOM[5'h12][4:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_yfi = _RANDOM[5'h12][12:5];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_yfj = {_RANDOM[5'h12][31:13], _RANDOM[5'h13][12:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:56:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:56:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  Multiplier mul (	// src/scala/EXPFP32.scala:78:21
-    .io_a      ({1'h0, |(io_in_bits_a[30:23]), io_in_bits_a[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EXPFP32.scala:89:12
-    .io_b      (25'hF5FDF0),	// src/scala/EXPFP32.scala:78:21
+  Multiplier mul (	// src/scala/EX2FP32.scala:77:21
+    .io_a      ({1'h0, |(io_in_bits_a[30:23]), io_in_bits_a[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EX2FP32.scala:88:12
+    .io_b      (25'hF5FDF0),	// src/scala/EX2FP32.scala:77:21
     .io_result (_mul_io_result)
   );
-  FMUL_s1 mulS1 (	// src/scala/EXPFP32.scala:79:21
+  FMUL_s1 mulS1 (	// src/scala/EX2FP32.scala:78:21
     .io_a                             (io_in_bits_a),
-    .io_b                             (32'h3E75FDF0),	// src/scala/EXPFP32.scala:73:14, :79:21
+    .io_b                             (32'h3E75FDF0),	// src/scala/EX2FP32.scala:72:14, :78:21
     .io_rm                            (io_in_bits_rm),
     .io_out_special_case_valid        (_mulS1_io_out_special_case_valid),
     .io_out_special_case_bits_nan     (_mulS1_io_out_special_case_bits_nan),
@@ -4168,18 +3916,18 @@ module MULFP32_1(	// src/scala/EXPFP32.scala:57:7
     .io_out_may_be_subnormal          (_mulS1_io_out_may_be_subnormal),
     .io_out_rm                        (_mulS1_io_out_rm)
   );
-  FMUL_s2 mulS2 (	// src/scala/EXPFP32.scala:80:21
-    .io_in_special_case_valid         (s1Pipe_rBits_mulS1Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan      (s1Pipe_rBits_mulS1Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf      (s1Pipe_rBits_mulS1Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero  (s1Pipe_rBits_mulS1Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow             (s1Pipe_rBits_mulS1Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_prod_sign                  (s1Pipe_rBits_mulS1Out_prod_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_shift_amt                  (s1Pipe_rBits_mulS1Out_shift_amt),	// src/scala/EXPFP32.scala:26:25
-    .io_in_exp_shifted                (s1Pipe_rBits_mulS1Out_exp_shifted),	// src/scala/EXPFP32.scala:26:25
-    .io_in_may_be_subnormal           (s1Pipe_rBits_mulS1Out_may_be_subnormal),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                         (s1Pipe_rBits_mulS1Out_rm),	// src/scala/EXPFP32.scala:26:25
-    .io_prod                          (s1Pipe_rBits_prod[47:0]),	// src/scala/EXPFP32.scala:26:25, :106:17
+  FMUL_s2 mulS2 (	// src/scala/EX2FP32.scala:79:21
+    .io_in_special_case_valid         (s1Pipe_rBits_mulS1Out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan      (s1Pipe_rBits_mulS1Out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf      (s1Pipe_rBits_mulS1Out_special_case_bits_inf),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_hasZero  (s1Pipe_rBits_mulS1Out_special_case_bits_hasZero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_early_overflow             (s1Pipe_rBits_mulS1Out_early_overflow),	// src/scala/EX2FP32.scala:25:25
+    .io_in_prod_sign                  (s1Pipe_rBits_mulS1Out_prod_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_shift_amt                  (s1Pipe_rBits_mulS1Out_shift_amt),	// src/scala/EX2FP32.scala:25:25
+    .io_in_exp_shifted                (s1Pipe_rBits_mulS1Out_exp_shifted),	// src/scala/EX2FP32.scala:25:25
+    .io_in_may_be_subnormal           (s1Pipe_rBits_mulS1Out_may_be_subnormal),	// src/scala/EX2FP32.scala:25:25
+    .io_in_rm                         (s1Pipe_rBits_mulS1Out_rm),	// src/scala/EX2FP32.scala:25:25
+    .io_prod                          (s1Pipe_rBits_prod[47:0]),	// src/scala/EX2FP32.scala:25:25, :105:17
     .io_out_special_case_valid        (_mulS2_io_out_special_case_valid),
     .io_out_special_case_bits_nan     (_mulS2_io_out_special_case_bits_nan),
     .io_out_special_case_bits_inf     (_mulS2_io_out_special_case_bits_inf),
@@ -4190,16 +3938,16 @@ module MULFP32_1(	// src/scala/EXPFP32.scala:57:7
     .io_out_early_overflow            (_mulS2_io_out_early_overflow),
     .io_out_rm                        (_mulS2_io_out_rm)
   );
-  FMUL_s3 mulS3 (	// src/scala/EXPFP32.scala:81:21
-    .io_in_special_case_valid        (s2Pipe_rBits_mulS2Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan     (s2Pipe_rBits_mulS2Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf     (s2Pipe_rBits_mulS2Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero (s2Pipe_rBits_mulS2Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sign              (s2Pipe_rBits_mulS2Out_raw_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_exp               (s2Pipe_rBits_mulS2Out_raw_out_exp),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sig               (s2Pipe_rBits_mulS2Out_raw_out_sig),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow            (s2Pipe_rBits_mulS2Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                        (s2Pipe_rBits_mulS2Out_rm),	// src/scala/EXPFP32.scala:26:25
+  FMUL_s3 mulS3 (	// src/scala/EX2FP32.scala:80:21
+    .io_in_special_case_valid        (s2Pipe_rBits_mulS2Out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan     (s2Pipe_rBits_mulS2Out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf     (s2Pipe_rBits_mulS2Out_special_case_bits_inf),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_hasZero (s2Pipe_rBits_mulS2Out_special_case_bits_hasZero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_sign              (s2Pipe_rBits_mulS2Out_raw_out_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_exp               (s2Pipe_rBits_mulS2Out_raw_out_exp),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_sig               (s2Pipe_rBits_mulS2Out_raw_out_sig),	// src/scala/EX2FP32.scala:25:25
+    .io_in_early_overflow            (s2Pipe_rBits_mulS2Out_early_overflow),	// src/scala/EX2FP32.scala:25:25
+    .io_in_rm                        (s2Pipe_rBits_mulS2Out_rm),	// src/scala/EX2FP32.scala:25:25
     .io_result                       (/* unused */),
     .io_to_fadd_fp_prod_sign         (_mulS3_io_to_fadd_fp_prod_sign),
     .io_to_fadd_fp_prod_exp          (_mulS3_io_to_fadd_fp_prod_exp),
@@ -4209,21 +3957,21 @@ module MULFP32_1(	// src/scala/EXPFP32.scala:57:7
     .io_to_fadd_inter_flags_overflow (_mulS3_io_to_fadd_inter_flags_overflow),
     .io_to_fadd_rm                   (_mulS3_io_to_fadd_rm)
   );
-  assign io_in_ready = s1_ready;	// src/scala/EXPFP32.scala:28:43, :57:7
-  assign io_out_valid = s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :57:7
-  assign io_out_bits_toAdd_fp_prod_sign = s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_fp_prod_exp = s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_fp_prod_sig = s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_inter_flags_isNaN = s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_inter_flags_isInf = s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_inter_flags_overflow = s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_rm = s3Pipe_rBits_toAdd_rm;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_rm = s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_bypass = s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_bypassVal = s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_yi = s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_yfi = s3Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_yfj = s3Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25, :57:7
+  assign io_in_ready = s1_ready;	// src/scala/EX2FP32.scala:27:43, :56:7
+  assign io_out_valid = s3Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :56:7
+  assign io_out_bits_toAdd_fp_prod_sign = s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_fp_prod_exp = s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_fp_prod_sig = s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_inter_flags_isNaN = s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_inter_flags_isInf = s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_inter_flags_overflow = s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_rm = s3Pipe_rBits_toAdd_rm;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_rm = s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_bypass = s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_bypassVal = s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_yi = s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_yfi = s3Pipe_rBits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_yfj = s3Pipe_rBits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25, :56:7
 endmodule
 
 module ShiftRightJam(	// dependencies/fudian/src/main/scala/fudian/utils/ShiftRightJam.scala:9:7
@@ -4331,7 +4079,7 @@ module LZA(	// dependencies/fudian/src/main/scala/fudian/utils/LZA.scala:11:7
      1'h0};	// dependencies/fudian/src/main/scala/fudian/utils/LZA.scala:11:7, :18:{14,21}, :19:{14,21,24}, :23:20, :26:14
 endmodule
 
-module CLZ_2(	// dependencies/fudian/src/main/scala/fudian/utils/CLZ.scala:7:7
+module CLZ_1(	// dependencies/fudian/src/main/scala/fudian/utils/CLZ.scala:7:7
   input  [48:0] io_in,	// dependencies/fudian/src/main/scala/fudian/utils/CLZ.scala:12:14
   output [5:0]  io_out	// dependencies/fudian/src/main/scala/fudian/utils/CLZ.scala:12:14
 );
@@ -4613,7 +4361,7 @@ module NearPath(	// dependencies/fudian/src/main/scala/fudian/FADD.scala:81:7
     .io_b (~b_sig),	// dependencies/fudian/src/main/scala/fudian/FADD.scala:103:37, :104:16
     .io_f (_lza_ab_io_f)
   );
-  CLZ_2 lzc_clz (	// dependencies/fudian/src/main/scala/fudian/utils/CLZ.scala:22:21
+  CLZ_1 lzc_clz (	// dependencies/fudian/src/main/scala/fudian/utils/CLZ.scala:22:21
     .io_in  (lzc_str),	// dependencies/fudian/src/main/scala/fudian/FADD.scala:124:32
     .io_out (io_out_lzc)
   );
@@ -4923,210 +4671,210 @@ module FCMA_ADD_s2(	// dependencies/fudian/src/main/scala/fudian/FADD.scala:333:
                  _near_path_rounder_io_out};	// dependencies/fudian/src/main/scala/fudian/FADD.scala:333:7, :346:32, :349:8, :398:55, :406:18, :407:58, :408:18, :411:57, :416:8, :424:49, :457:57, :459:38, :460:29, :461:{21,24,44,68}, :466:44, :472:{18,33,36,50}, :474:8, :476:32, :482:8, :495:19, :498:8, :500:10, :501:10, dependencies/fudian/src/main/scala/fudian/RoundingUnit.scala:44:25, :54:41, dependencies/fudian/src/main/scala/fudian/package.scala:65:10, src/main/scala/chisel3/util/Mux.scala:30:73
 endmodule
 
-module CMAFP32(	// src/scala/EXPFP32.scala:136:7
-  input         clock,	// src/scala/EXPFP32.scala:136:7
-                reset,	// src/scala/EXPFP32.scala:136:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:152:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:152:14
-  input  [31:0] io_in_bits_a,	// src/scala/EXPFP32.scala:152:14
-  input  [2:0]  io_in_bits_rm,	// src/scala/EXPFP32.scala:152:14
-                io_in_bits_ctrl_rm,	// src/scala/EXPFP32.scala:152:14
-  input         io_in_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:152:14
-  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:152:14
-  input  [8:0]  io_in_bits_ctrl_yi,	// src/scala/EXPFP32.scala:152:14
-  input  [7:0]  io_in_bits_ctrl_yfi,	// src/scala/EXPFP32.scala:152:14
-  input  [31:0] io_in_bits_ctrl_yfj,	// src/scala/EXPFP32.scala:152:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:152:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:152:14
-  output [31:0] io_out_bits_result,	// src/scala/EXPFP32.scala:152:14
-  output [2:0]  io_out_bits_ctrl_rm,	// src/scala/EXPFP32.scala:152:14
-  output        io_out_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:152:14
-  output [31:0] io_out_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:152:14
-  output [8:0]  io_out_bits_ctrl_yi,	// src/scala/EXPFP32.scala:152:14
-  output [7:0]  io_out_bits_ctrl_yfi,	// src/scala/EXPFP32.scala:152:14
-  output [31:0] io_out_bits_ctrl_yfj	// src/scala/EXPFP32.scala:152:14
+module CMAFP32(	// src/scala/EX2FP32.scala:135:7
+  input         clock,	// src/scala/EX2FP32.scala:135:7
+                reset,	// src/scala/EX2FP32.scala:135:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:151:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:151:14
+  input  [31:0] io_in_bits_a,	// src/scala/EX2FP32.scala:151:14
+  input  [2:0]  io_in_bits_rm,	// src/scala/EX2FP32.scala:151:14
+                io_in_bits_ctrl_rm,	// src/scala/EX2FP32.scala:151:14
+  input         io_in_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:151:14
+  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EX2FP32.scala:151:14
+  input  [8:0]  io_in_bits_ctrl_yi,	// src/scala/EX2FP32.scala:151:14
+  input  [7:0]  io_in_bits_ctrl_yfi,	// src/scala/EX2FP32.scala:151:14
+  input  [31:0] io_in_bits_ctrl_yfj,	// src/scala/EX2FP32.scala:151:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:151:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:151:14
+  output [31:0] io_out_bits_result,	// src/scala/EX2FP32.scala:151:14
+  output [2:0]  io_out_bits_ctrl_rm,	// src/scala/EX2FP32.scala:151:14
+  output        io_out_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:151:14
+  output [31:0] io_out_bits_ctrl_bypassVal,	// src/scala/EX2FP32.scala:151:14
+  output [8:0]  io_out_bits_ctrl_yi,	// src/scala/EX2FP32.scala:151:14
+  output [7:0]  io_out_bits_ctrl_yfi,	// src/scala/EX2FP32.scala:151:14
+  output [31:0] io_out_bits_ctrl_yfj	// src/scala/EX2FP32.scala:151:14
 );
 
-  wire        s5_ready;	// src/scala/EXPFP32.scala:28:43
-  wire [31:0] _addS2_io_result;	// src/scala/EXPFP32.scala:163:21
-  wire [2:0]  _addS1_io_out_rm;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_far_path_out_sign;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_near_path_out_sign;	// src/scala/EXPFP32.scala:162:21
-  wire [7:0]  _addS1_io_out_near_path_out_exp;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_small_add;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_far_path_mul_of;	// src/scala/EXPFP32.scala:162:21
-  wire [47:0] _addS1_io_out_far_sig_a;	// src/scala/EXPFP32.scala:162:21
-  wire [51:0] _addS1_io_out_far_sig_b;	// src/scala/EXPFP32.scala:162:21
-  wire [7:0]  _addS1_io_out_far_exp_a_vec_0;	// src/scala/EXPFP32.scala:162:21
-  wire [7:0]  _addS1_io_out_far_exp_a_vec_1;	// src/scala/EXPFP32.scala:162:21
-  wire [7:0]  _addS1_io_out_far_exp_a_vec_2;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_near_path_sig_is_zero;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_near_path_lza_error;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_near_path_int_bit;	// src/scala/EXPFP32.scala:162:21
-  wire [48:0] _addS1_io_out_near_path_sig_raw;	// src/scala/EXPFP32.scala:162:21
-  wire [5:0]  _addS1_io_out_near_path_lzc;	// src/scala/EXPFP32.scala:162:21
-  wire        _addS1_io_out_sel_far_path;	// src/scala/EXPFP32.scala:162:21
-  wire        _mul_io_out_valid;	// src/scala/EXPFP32.scala:161:21
-  wire        _mul_io_out_bits_toAdd_fp_prod_sign;	// src/scala/EXPFP32.scala:161:21
-  wire [7:0]  _mul_io_out_bits_toAdd_fp_prod_exp;	// src/scala/EXPFP32.scala:161:21
-  wire [46:0] _mul_io_out_bits_toAdd_fp_prod_sig;	// src/scala/EXPFP32.scala:161:21
-  wire        _mul_io_out_bits_toAdd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:161:21
-  wire        _mul_io_out_bits_toAdd_inter_flags_isInf;	// src/scala/EXPFP32.scala:161:21
-  wire        _mul_io_out_bits_toAdd_inter_flags_overflow;	// src/scala/EXPFP32.scala:161:21
-  wire [2:0]  _mul_io_out_bits_toAdd_rm;	// src/scala/EXPFP32.scala:161:21
-  wire [2:0]  _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:161:21
-  wire        _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:161:21
-  wire [31:0] _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:161:21
-  wire [8:0]  _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:161:21
-  wire [7:0]  _mul_io_out_bits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:161:21
-  wire [31:0] _mul_io_out_bits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:161:21
-  reg         s4Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [2:0]  s4Pipe_rBits_out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_far_path_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_near_path_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s4Pipe_rBits_out_near_path_out_exp;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_special_case_bits_inf_sign;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_small_add;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_far_path_mul_of;	// src/scala/EXPFP32.scala:26:25
-  reg  [47:0] s4Pipe_rBits_out_far_sig_a;	// src/scala/EXPFP32.scala:26:25
-  reg  [51:0] s4Pipe_rBits_out_far_sig_b;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s4Pipe_rBits_out_far_exp_a_vec_0;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s4Pipe_rBits_out_far_exp_a_vec_1;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s4Pipe_rBits_out_far_exp_a_vec_2;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_near_path_sig_is_zero;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_near_path_lza_error;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_near_path_int_bit;	// src/scala/EXPFP32.scala:26:25
-  reg  [48:0] s4Pipe_rBits_out_near_path_sig_raw;	// src/scala/EXPFP32.scala:26:25
-  reg  [5:0]  s4Pipe_rBits_out_near_path_lzc;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_out_sel_far_path;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s4Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s4Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s4Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s4Pipe_rBits_ctrl_yfi;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s4Pipe_rBits_ctrl_yfj;	// src/scala/EXPFP32.scala:26:25
-  wire        s4_ready = ~s4Pipe_rValid | s5_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s5Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [31:0] s5Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s5Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s5Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s5Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s5Pipe_rBits_ctrl_yfi;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s5Pipe_rBits_ctrl_yfj;	// src/scala/EXPFP32.scala:26:25
-  assign s5_ready = ~s5Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire        _s4Pipe_T = s4_ready & _mul_io_out_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43, :161:21
-  wire        _s5Pipe_T = s5_ready & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:136:7
-    if (reset) begin	// src/scala/EXPFP32.scala:136:7
-      s4Pipe_rValid <= 1'h0;	// src/scala/EXPFP32.scala:25:29
-      s5Pipe_rValid <= 1'h0;	// src/scala/EXPFP32.scala:25:29
+  wire        s5_ready;	// src/scala/EX2FP32.scala:27:43
+  wire [31:0] _addS2_io_result;	// src/scala/EX2FP32.scala:162:21
+  wire [2:0]  _addS1_io_out_rm;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_far_path_out_sign;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_near_path_out_sign;	// src/scala/EX2FP32.scala:161:21
+  wire [7:0]  _addS1_io_out_near_path_out_exp;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_small_add;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_far_path_mul_of;	// src/scala/EX2FP32.scala:161:21
+  wire [47:0] _addS1_io_out_far_sig_a;	// src/scala/EX2FP32.scala:161:21
+  wire [51:0] _addS1_io_out_far_sig_b;	// src/scala/EX2FP32.scala:161:21
+  wire [7:0]  _addS1_io_out_far_exp_a_vec_0;	// src/scala/EX2FP32.scala:161:21
+  wire [7:0]  _addS1_io_out_far_exp_a_vec_1;	// src/scala/EX2FP32.scala:161:21
+  wire [7:0]  _addS1_io_out_far_exp_a_vec_2;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_near_path_sig_is_zero;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_near_path_lza_error;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_near_path_int_bit;	// src/scala/EX2FP32.scala:161:21
+  wire [48:0] _addS1_io_out_near_path_sig_raw;	// src/scala/EX2FP32.scala:161:21
+  wire [5:0]  _addS1_io_out_near_path_lzc;	// src/scala/EX2FP32.scala:161:21
+  wire        _addS1_io_out_sel_far_path;	// src/scala/EX2FP32.scala:161:21
+  wire        _mul_io_out_valid;	// src/scala/EX2FP32.scala:160:21
+  wire        _mul_io_out_bits_toAdd_fp_prod_sign;	// src/scala/EX2FP32.scala:160:21
+  wire [7:0]  _mul_io_out_bits_toAdd_fp_prod_exp;	// src/scala/EX2FP32.scala:160:21
+  wire [46:0] _mul_io_out_bits_toAdd_fp_prod_sig;	// src/scala/EX2FP32.scala:160:21
+  wire        _mul_io_out_bits_toAdd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:160:21
+  wire        _mul_io_out_bits_toAdd_inter_flags_isInf;	// src/scala/EX2FP32.scala:160:21
+  wire        _mul_io_out_bits_toAdd_inter_flags_overflow;	// src/scala/EX2FP32.scala:160:21
+  wire [2:0]  _mul_io_out_bits_toAdd_rm;	// src/scala/EX2FP32.scala:160:21
+  wire [2:0]  _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:160:21
+  wire        _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:160:21
+  wire [31:0] _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:160:21
+  wire [8:0]  _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:160:21
+  wire [7:0]  _mul_io_out_bits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:160:21
+  wire [31:0] _mul_io_out_bits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:160:21
+  reg         s4Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [2:0]  s4Pipe_rBits_out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_far_path_out_sign;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_near_path_out_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s4Pipe_rBits_out_near_path_out_exp;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_special_case_bits_inf_sign;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_small_add;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_far_path_mul_of;	// src/scala/EX2FP32.scala:25:25
+  reg  [47:0] s4Pipe_rBits_out_far_sig_a;	// src/scala/EX2FP32.scala:25:25
+  reg  [51:0] s4Pipe_rBits_out_far_sig_b;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s4Pipe_rBits_out_far_exp_a_vec_0;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s4Pipe_rBits_out_far_exp_a_vec_1;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s4Pipe_rBits_out_far_exp_a_vec_2;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_near_path_sig_is_zero;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_near_path_lza_error;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_near_path_int_bit;	// src/scala/EX2FP32.scala:25:25
+  reg  [48:0] s4Pipe_rBits_out_near_path_sig_raw;	// src/scala/EX2FP32.scala:25:25
+  reg  [5:0]  s4Pipe_rBits_out_near_path_lzc;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_out_sel_far_path;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s4Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s4Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s4Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s4Pipe_rBits_ctrl_yfi;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s4Pipe_rBits_ctrl_yfj;	// src/scala/EX2FP32.scala:25:25
+  wire        s4_ready = ~s4Pipe_rValid | s5_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg         s5Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [31:0] s5Pipe_rBits_result;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s5Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s5Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s5Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s5Pipe_rBits_ctrl_yfi;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s5Pipe_rBits_ctrl_yfj;	// src/scala/EX2FP32.scala:25:25
+  assign s5_ready = ~s5Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  wire        _s4Pipe_T = s4_ready & _mul_io_out_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43, :160:21
+  wire        _s5Pipe_T = s5_ready & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:135:7
+    if (reset) begin	// src/scala/EX2FP32.scala:135:7
+      s4Pipe_rValid <= 1'h0;	// src/scala/EX2FP32.scala:24:29
+      s5Pipe_rValid <= 1'h0;	// src/scala/EX2FP32.scala:24:29
     end
-    else begin	// src/scala/EXPFP32.scala:136:7
-      s4Pipe_rValid <= _s4Pipe_T | ~(s5_ready & s4Pipe_rValid) & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s5Pipe_rValid <= _s5Pipe_T | ~(io_out_ready & s5Pipe_rValid) & s5Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
+    else begin	// src/scala/EX2FP32.scala:135:7
+      s4Pipe_rValid <= _s4Pipe_T | ~(s5_ready & s4Pipe_rValid) & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s5Pipe_rValid <= _s5Pipe_T | ~(io_out_ready & s5Pipe_rValid) & s5Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
     end
     if (_s4Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s4Pipe_rBits_out_rm <= _addS1_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_far_path_out_sign <= _addS1_io_out_far_path_out_sign;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_near_path_out_sign <= _addS1_io_out_near_path_out_sign;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_near_path_out_exp <= _addS1_io_out_near_path_out_exp;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_special_case_valid <= _addS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_special_case_bits_nan <= _addS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :162:21
+      s4Pipe_rBits_out_rm <= _addS1_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_far_path_out_sign <= _addS1_io_out_far_path_out_sign;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_near_path_out_sign <= _addS1_io_out_near_path_out_sign;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_near_path_out_exp <= _addS1_io_out_near_path_out_exp;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_special_case_valid <= _addS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_special_case_bits_nan <= _addS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :161:21
       s4Pipe_rBits_out_special_case_bits_inf_sign <=
-        _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_small_add <= _addS1_io_out_small_add;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_far_path_mul_of <= _addS1_io_out_far_path_mul_of;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_far_sig_a <= _addS1_io_out_far_sig_a;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_far_sig_b <= _addS1_io_out_far_sig_b;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_far_exp_a_vec_0 <= _addS1_io_out_far_exp_a_vec_0;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_far_exp_a_vec_1 <= _addS1_io_out_far_exp_a_vec_1;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_far_exp_a_vec_2 <= _addS1_io_out_far_exp_a_vec_2;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_near_path_sig_is_zero <= _addS1_io_out_near_path_sig_is_zero;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_near_path_lza_error <= _addS1_io_out_near_path_lza_error;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_near_path_int_bit <= _addS1_io_out_near_path_int_bit;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_near_path_sig_raw <= _addS1_io_out_near_path_sig_raw;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_near_path_lzc <= _addS1_io_out_near_path_lzc;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_out_sel_far_path <= _addS1_io_out_sel_far_path;	// src/scala/EXPFP32.scala:26:25, :162:21
-      s4Pipe_rBits_ctrl_rm <= _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25, :161:21
-      s4Pipe_rBits_ctrl_bypass <= _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25, :161:21
-      s4Pipe_rBits_ctrl_bypassVal <= _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :161:21
-      s4Pipe_rBits_ctrl_yi <= _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25, :161:21
-      s4Pipe_rBits_ctrl_yfi <= _mul_io_out_bits_ctrl_topCtrl_yfi;	// src/scala/EXPFP32.scala:26:25, :161:21
-      s4Pipe_rBits_ctrl_yfj <= _mul_io_out_bits_ctrl_topCtrl_yfj;	// src/scala/EXPFP32.scala:26:25, :161:21
+        _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_small_add <= _addS1_io_out_small_add;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_far_path_mul_of <= _addS1_io_out_far_path_mul_of;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_far_sig_a <= _addS1_io_out_far_sig_a;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_far_sig_b <= _addS1_io_out_far_sig_b;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_far_exp_a_vec_0 <= _addS1_io_out_far_exp_a_vec_0;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_far_exp_a_vec_1 <= _addS1_io_out_far_exp_a_vec_1;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_far_exp_a_vec_2 <= _addS1_io_out_far_exp_a_vec_2;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_near_path_sig_is_zero <= _addS1_io_out_near_path_sig_is_zero;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_near_path_lza_error <= _addS1_io_out_near_path_lza_error;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_near_path_int_bit <= _addS1_io_out_near_path_int_bit;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_near_path_sig_raw <= _addS1_io_out_near_path_sig_raw;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_near_path_lzc <= _addS1_io_out_near_path_lzc;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_out_sel_far_path <= _addS1_io_out_sel_far_path;	// src/scala/EX2FP32.scala:25:25, :161:21
+      s4Pipe_rBits_ctrl_rm <= _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25, :160:21
+      s4Pipe_rBits_ctrl_bypass <= _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25, :160:21
+      s4Pipe_rBits_ctrl_bypassVal <= _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :160:21
+      s4Pipe_rBits_ctrl_yi <= _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25, :160:21
+      s4Pipe_rBits_ctrl_yfi <= _mul_io_out_bits_ctrl_topCtrl_yfi;	// src/scala/EX2FP32.scala:25:25, :160:21
+      s4Pipe_rBits_ctrl_yfj <= _mul_io_out_bits_ctrl_topCtrl_yfj;	// src/scala/EX2FP32.scala:25:25, :160:21
     end
     if (_s5Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s5Pipe_rBits_result <= _addS2_io_result;	// src/scala/EXPFP32.scala:26:25, :163:21
-      s5Pipe_rBits_ctrl_rm <= s4Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_bypass <= s4Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_bypassVal <= s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_yi <= s4Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_yfi <= s4Pipe_rBits_ctrl_yfi;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_yfj <= s4Pipe_rBits_ctrl_yfj;	// src/scala/EXPFP32.scala:26:25
+      s5Pipe_rBits_result <= _addS2_io_result;	// src/scala/EX2FP32.scala:25:25, :162:21
+      s5Pipe_rBits_ctrl_rm <= s4Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_bypass <= s4Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_bypassVal <= s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_yi <= s4Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_yfi <= s4Pipe_rBits_ctrl_yfi;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_yfj <= s4Pipe_rBits_ctrl_yfj;	// src/scala/EX2FP32.scala:25:25
     end
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:136:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:136:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:136:7
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:135:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:135:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:135:7
     `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:14];	// src/scala/EXPFP32.scala:136:7
-    initial begin	// src/scala/EXPFP32.scala:136:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:136:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:136:7
+    logic [31:0] _RANDOM[0:14];	// src/scala/EX2FP32.scala:135:7
+    initial begin	// src/scala/EX2FP32.scala:135:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:135:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:135:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:136:7
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:135:7
         for (logic [3:0] i = 4'h0; i < 4'hF; i += 4'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:136:7
-        end	// src/scala/EXPFP32.scala:136:7
-        s4Pipe_rValid = _RANDOM[4'h0][0];	// src/scala/EXPFP32.scala:25:29, :136:7
-        s4Pipe_rBits_out_rm = _RANDOM[4'h0][3:1];	// src/scala/EXPFP32.scala:25:29, :26:25, :136:7
-        s4Pipe_rBits_out_far_path_out_sign = _RANDOM[4'h0][4];	// src/scala/EXPFP32.scala:25:29, :26:25, :136:7
-        s4Pipe_rBits_out_near_path_out_sign = _RANDOM[4'h1][8];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_near_path_out_exp = _RANDOM[4'h1][16:9];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_special_case_valid = _RANDOM[4'h2][12];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_special_case_bits_nan = _RANDOM[4'h2][14];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_special_case_bits_inf_sign = _RANDOM[4'h2][15];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_small_add = _RANDOM[4'h2][16];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_far_path_mul_of = _RANDOM[4'h2][17];	// src/scala/EXPFP32.scala:26:25, :136:7
+          _RANDOM[i] = `RANDOM;	// src/scala/EX2FP32.scala:135:7
+        end	// src/scala/EX2FP32.scala:135:7
+        s4Pipe_rValid = _RANDOM[4'h0][0];	// src/scala/EX2FP32.scala:24:29, :135:7
+        s4Pipe_rBits_out_rm = _RANDOM[4'h0][3:1];	// src/scala/EX2FP32.scala:24:29, :25:25, :135:7
+        s4Pipe_rBits_out_far_path_out_sign = _RANDOM[4'h0][4];	// src/scala/EX2FP32.scala:24:29, :25:25, :135:7
+        s4Pipe_rBits_out_near_path_out_sign = _RANDOM[4'h1][8];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_near_path_out_exp = _RANDOM[4'h1][16:9];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_special_case_valid = _RANDOM[4'h2][12];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_special_case_bits_nan = _RANDOM[4'h2][14];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_special_case_bits_inf_sign = _RANDOM[4'h2][15];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_small_add = _RANDOM[4'h2][16];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_far_path_mul_of = _RANDOM[4'h2][17];	// src/scala/EX2FP32.scala:25:25, :135:7
         s4Pipe_rBits_out_far_sig_a =
-          {_RANDOM[4'h2][31:18], _RANDOM[4'h3], _RANDOM[4'h4][1:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_far_sig_b = {_RANDOM[4'h4][31:2], _RANDOM[4'h5][21:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_far_exp_a_vec_0 = _RANDOM[4'h5][30:23];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_far_exp_a_vec_1 = {_RANDOM[4'h5][31], _RANDOM[4'h6][6:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_far_exp_a_vec_2 = _RANDOM[4'h6][14:7];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_near_path_sig_is_zero = _RANDOM[4'h6][15];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_near_path_lza_error = _RANDOM[4'h6][16];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_near_path_int_bit = _RANDOM[4'h6][17];	// src/scala/EXPFP32.scala:26:25, :136:7
+          {_RANDOM[4'h2][31:18], _RANDOM[4'h3], _RANDOM[4'h4][1:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_far_sig_b = {_RANDOM[4'h4][31:2], _RANDOM[4'h5][21:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_far_exp_a_vec_0 = _RANDOM[4'h5][30:23];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_far_exp_a_vec_1 = {_RANDOM[4'h5][31], _RANDOM[4'h6][6:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_far_exp_a_vec_2 = _RANDOM[4'h6][14:7];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_near_path_sig_is_zero = _RANDOM[4'h6][15];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_near_path_lza_error = _RANDOM[4'h6][16];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_near_path_int_bit = _RANDOM[4'h6][17];	// src/scala/EX2FP32.scala:25:25, :135:7
         s4Pipe_rBits_out_near_path_sig_raw =
-          {_RANDOM[4'h6][31:18], _RANDOM[4'h7], _RANDOM[4'h8][2:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_near_path_lzc = _RANDOM[4'h8][8:3];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_out_sel_far_path = _RANDOM[4'h8][9];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_ctrl_rm = _RANDOM[4'h8][12:10];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_ctrl_bypass = _RANDOM[4'h8][13];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h8][31:14], _RANDOM[4'h9][13:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_ctrl_yi = _RANDOM[4'h9][22:14];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_ctrl_yfi = _RANDOM[4'h9][30:23];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s4Pipe_rBits_ctrl_yfj = {_RANDOM[4'h9][31], _RANDOM[4'hA][30:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
-        s5Pipe_rValid = _RANDOM[4'hA][31];	// src/scala/EXPFP32.scala:25:29, :26:25, :136:7
-        s5Pipe_rBits_result = _RANDOM[4'hB];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s5Pipe_rBits_ctrl_rm = _RANDOM[4'hC][2:0];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s5Pipe_rBits_ctrl_bypass = _RANDOM[4'hC][3];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s5Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'hC][31:4], _RANDOM[4'hD][3:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
-        s5Pipe_rBits_ctrl_yi = _RANDOM[4'hD][12:4];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s5Pipe_rBits_ctrl_yfi = _RANDOM[4'hD][20:13];	// src/scala/EXPFP32.scala:26:25, :136:7
-        s5Pipe_rBits_ctrl_yfj = {_RANDOM[4'hD][31:21], _RANDOM[4'hE][20:0]};	// src/scala/EXPFP32.scala:26:25, :136:7
+          {_RANDOM[4'h6][31:18], _RANDOM[4'h7], _RANDOM[4'h8][2:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_near_path_lzc = _RANDOM[4'h8][8:3];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_out_sel_far_path = _RANDOM[4'h8][9];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_ctrl_rm = _RANDOM[4'h8][12:10];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_ctrl_bypass = _RANDOM[4'h8][13];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h8][31:14], _RANDOM[4'h9][13:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_ctrl_yi = _RANDOM[4'h9][22:14];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_ctrl_yfi = _RANDOM[4'h9][30:23];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s4Pipe_rBits_ctrl_yfj = {_RANDOM[4'h9][31], _RANDOM[4'hA][30:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
+        s5Pipe_rValid = _RANDOM[4'hA][31];	// src/scala/EX2FP32.scala:24:29, :25:25, :135:7
+        s5Pipe_rBits_result = _RANDOM[4'hB];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s5Pipe_rBits_ctrl_rm = _RANDOM[4'hC][2:0];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s5Pipe_rBits_ctrl_bypass = _RANDOM[4'hC][3];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s5Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'hC][31:4], _RANDOM[4'hD][3:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
+        s5Pipe_rBits_ctrl_yi = _RANDOM[4'hD][12:4];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s5Pipe_rBits_ctrl_yfi = _RANDOM[4'hD][20:13];	// src/scala/EX2FP32.scala:25:25, :135:7
+        s5Pipe_rBits_ctrl_yfj = {_RANDOM[4'hD][31:21], _RANDOM[4'hE][20:0]};	// src/scala/EX2FP32.scala:25:25, :135:7
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:136:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:136:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:135:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:135:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  MULFP32_1 mul (	// src/scala/EXPFP32.scala:161:21
+  MULFP32 mul (	// src/scala/EX2FP32.scala:160:21
     .clock                                  (clock),
     .reset                                  (reset),
     .io_in_ready                            (io_in_ready),
@@ -5139,7 +4887,7 @@ module CMAFP32(	// src/scala/EXPFP32.scala:136:7
     .io_in_bits_ctrl_topCtrl_yi             (io_in_bits_ctrl_yi),
     .io_in_bits_ctrl_topCtrl_yfi            (io_in_bits_ctrl_yfi),
     .io_in_bits_ctrl_topCtrl_yfj            (io_in_bits_ctrl_yfj),
-    .io_out_ready                           (s4_ready),	// src/scala/EXPFP32.scala:28:43
+    .io_out_ready                           (s4_ready),	// src/scala/EX2FP32.scala:27:43
     .io_out_valid                           (_mul_io_out_valid),
     .io_out_bits_toAdd_fp_prod_sign         (_mul_io_out_bits_toAdd_fp_prod_sign),
     .io_out_bits_toAdd_fp_prod_exp          (_mul_io_out_bits_toAdd_fp_prod_exp),
@@ -5155,16 +4903,16 @@ module CMAFP32(	// src/scala/EXPFP32.scala:136:7
     .io_out_bits_ctrl_topCtrl_yfi           (_mul_io_out_bits_ctrl_topCtrl_yfi),
     .io_out_bits_ctrl_topCtrl_yfj           (_mul_io_out_bits_ctrl_topCtrl_yfj)
   );
-  FCMA_ADD_s1 addS1 (	// src/scala/EXPFP32.scala:162:21
-    .io_a                              (56'h3F317218000000),	// src/scala/EXPFP32.scala:162:21
+  FCMA_ADD_s1 addS1 (	// src/scala/EX2FP32.scala:161:21
+    .io_a                              (56'h3F317218000000),	// src/scala/EX2FP32.scala:161:21
     .io_b
       ({_mul_io_out_bits_toAdd_fp_prod_sign,
         _mul_io_out_bits_toAdd_fp_prod_exp,
-        _mul_io_out_bits_toAdd_fp_prod_sig}),	// src/scala/EXPFP32.scala:161:21, :174:59
-    .io_b_inter_flags_isNaN            (_mul_io_out_bits_toAdd_inter_flags_isNaN),	// src/scala/EXPFP32.scala:161:21
-    .io_b_inter_flags_isInf            (_mul_io_out_bits_toAdd_inter_flags_isInf),	// src/scala/EXPFP32.scala:161:21
-    .io_b_inter_flags_overflow         (_mul_io_out_bits_toAdd_inter_flags_overflow),	// src/scala/EXPFP32.scala:161:21
-    .io_rm                             (_mul_io_out_bits_toAdd_rm),	// src/scala/EXPFP32.scala:161:21
+        _mul_io_out_bits_toAdd_fp_prod_sig}),	// src/scala/EX2FP32.scala:160:21, :173:59
+    .io_b_inter_flags_isNaN            (_mul_io_out_bits_toAdd_inter_flags_isNaN),	// src/scala/EX2FP32.scala:160:21
+    .io_b_inter_flags_isInf            (_mul_io_out_bits_toAdd_inter_flags_isInf),	// src/scala/EX2FP32.scala:160:21
+    .io_b_inter_flags_overflow         (_mul_io_out_bits_toAdd_inter_flags_overflow),	// src/scala/EX2FP32.scala:160:21
+    .io_rm                             (_mul_io_out_bits_toAdd_rm),	// src/scala/EX2FP32.scala:160:21
     .io_out_rm                         (_addS1_io_out_rm),
     .io_out_far_path_out_sign          (_addS1_io_out_far_path_out_sign),
     .io_out_near_path_out_sign         (_addS1_io_out_near_path_out_sign),
@@ -5186,281 +4934,281 @@ module CMAFP32(	// src/scala/EXPFP32.scala:136:7
     .io_out_near_path_lzc              (_addS1_io_out_near_path_lzc),
     .io_out_sel_far_path               (_addS1_io_out_sel_far_path)
   );
-  FCMA_ADD_s2 addS2 (	// src/scala/EXPFP32.scala:163:21
-    .io_in_rm                         (s4Pipe_rBits_out_rm),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_path_out_sign          (s4Pipe_rBits_out_far_path_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_out_sign         (s4Pipe_rBits_out_near_path_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_out_exp          (s4Pipe_rBits_out_near_path_out_exp),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_valid         (s4Pipe_rBits_out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan      (s4Pipe_rBits_out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf_sign (s4Pipe_rBits_out_special_case_bits_inf_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_small_add                  (s4Pipe_rBits_out_small_add),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_path_mul_of            (s4Pipe_rBits_out_far_path_mul_of),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_sig_a                  (s4Pipe_rBits_out_far_sig_a),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_sig_b                  (s4Pipe_rBits_out_far_sig_b),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_exp_a_vec_0            (s4Pipe_rBits_out_far_exp_a_vec_0),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_exp_a_vec_1            (s4Pipe_rBits_out_far_exp_a_vec_1),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_exp_a_vec_2            (s4Pipe_rBits_out_far_exp_a_vec_2),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_sig_is_zero      (s4Pipe_rBits_out_near_path_sig_is_zero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_lza_error        (s4Pipe_rBits_out_near_path_lza_error),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_int_bit          (s4Pipe_rBits_out_near_path_int_bit),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_sig_raw          (s4Pipe_rBits_out_near_path_sig_raw),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_lzc              (s4Pipe_rBits_out_near_path_lzc),	// src/scala/EXPFP32.scala:26:25
-    .io_in_sel_far_path               (s4Pipe_rBits_out_sel_far_path),	// src/scala/EXPFP32.scala:26:25
+  FCMA_ADD_s2 addS2 (	// src/scala/EX2FP32.scala:162:21
+    .io_in_rm                         (s4Pipe_rBits_out_rm),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_path_out_sign          (s4Pipe_rBits_out_far_path_out_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_out_sign         (s4Pipe_rBits_out_near_path_out_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_out_exp          (s4Pipe_rBits_out_near_path_out_exp),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_valid         (s4Pipe_rBits_out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan      (s4Pipe_rBits_out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf_sign (s4Pipe_rBits_out_special_case_bits_inf_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_small_add                  (s4Pipe_rBits_out_small_add),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_path_mul_of            (s4Pipe_rBits_out_far_path_mul_of),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_sig_a                  (s4Pipe_rBits_out_far_sig_a),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_sig_b                  (s4Pipe_rBits_out_far_sig_b),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_exp_a_vec_0            (s4Pipe_rBits_out_far_exp_a_vec_0),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_exp_a_vec_1            (s4Pipe_rBits_out_far_exp_a_vec_1),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_exp_a_vec_2            (s4Pipe_rBits_out_far_exp_a_vec_2),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_sig_is_zero      (s4Pipe_rBits_out_near_path_sig_is_zero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_lza_error        (s4Pipe_rBits_out_near_path_lza_error),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_int_bit          (s4Pipe_rBits_out_near_path_int_bit),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_sig_raw          (s4Pipe_rBits_out_near_path_sig_raw),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_lzc              (s4Pipe_rBits_out_near_path_lzc),	// src/scala/EX2FP32.scala:25:25
+    .io_in_sel_far_path               (s4Pipe_rBits_out_sel_far_path),	// src/scala/EX2FP32.scala:25:25
     .io_result                        (_addS2_io_result)
   );
-  assign io_out_valid = s5Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :136:7
-  assign io_out_bits_result = s5Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25, :136:7
-  assign io_out_bits_ctrl_rm = s5Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25, :136:7
-  assign io_out_bits_ctrl_bypass = s5Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25, :136:7
-  assign io_out_bits_ctrl_bypassVal = s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :136:7
-  assign io_out_bits_ctrl_yi = s5Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25, :136:7
-  assign io_out_bits_ctrl_yfi = s5Pipe_rBits_ctrl_yfi;	// src/scala/EXPFP32.scala:26:25, :136:7
-  assign io_out_bits_ctrl_yfj = s5Pipe_rBits_ctrl_yfj;	// src/scala/EXPFP32.scala:26:25, :136:7
+  assign io_out_valid = s5Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :135:7
+  assign io_out_bits_result = s5Pipe_rBits_result;	// src/scala/EX2FP32.scala:25:25, :135:7
+  assign io_out_bits_ctrl_rm = s5Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25, :135:7
+  assign io_out_bits_ctrl_bypass = s5Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25, :135:7
+  assign io_out_bits_ctrl_bypassVal = s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :135:7
+  assign io_out_bits_ctrl_yi = s5Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25, :135:7
+  assign io_out_bits_ctrl_yfi = s5Pipe_rBits_ctrl_yfi;	// src/scala/EX2FP32.scala:25:25, :135:7
+  assign io_out_bits_ctrl_yfj = s5Pipe_rBits_ctrl_yfj;	// src/scala/EX2FP32.scala:25:25, :135:7
 endmodule
 
-module MULFP32_2(	// src/scala/EXPFP32.scala:57:7
-  input         clock,	// src/scala/EXPFP32.scala:57:7
-                reset,	// src/scala/EXPFP32.scala:57:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_a,	// src/scala/EXPFP32.scala:73:14
-                io_in_bits_b,	// src/scala/EXPFP32.scala:73:14
-  input  [2:0]  io_in_bits_rm,	// src/scala/EXPFP32.scala:73:14
-  input  [7:0]  io_in_bits_ctrl_index,	// src/scala/EXPFP32.scala:73:14
-  input  [2:0]  io_in_bits_ctrl_topCtrl_rm,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_bits_ctrl_topCtrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_ctrl_topCtrl_bypassVal,	// src/scala/EXPFP32.scala:73:14
-  input  [8:0]  io_in_bits_ctrl_topCtrl_yi,	// src/scala/EXPFP32.scala:73:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:73:14
-                io_out_bits_toAdd_fp_prod_sign,	// src/scala/EXPFP32.scala:73:14
-  output [7:0]  io_out_bits_toAdd_fp_prod_exp,	// src/scala/EXPFP32.scala:73:14
-  output [46:0] io_out_bits_toAdd_fp_prod_sig,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_bits_toAdd_inter_flags_isNaN,	// src/scala/EXPFP32.scala:73:14
-                io_out_bits_toAdd_inter_flags_isInf,	// src/scala/EXPFP32.scala:73:14
-                io_out_bits_toAdd_inter_flags_overflow,	// src/scala/EXPFP32.scala:73:14
-  output [2:0]  io_out_bits_toAdd_rm,	// src/scala/EXPFP32.scala:73:14
-  output [7:0]  io_out_bits_ctrl_index,	// src/scala/EXPFP32.scala:73:14
-  output [2:0]  io_out_bits_ctrl_topCtrl_rm,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_bits_ctrl_topCtrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  output [31:0] io_out_bits_ctrl_topCtrl_bypassVal,	// src/scala/EXPFP32.scala:73:14
-  output [8:0]  io_out_bits_ctrl_topCtrl_yi	// src/scala/EXPFP32.scala:73:14
+module MULFP32_1(	// src/scala/EX2FP32.scala:56:7
+  input         clock,	// src/scala/EX2FP32.scala:56:7
+                reset,	// src/scala/EX2FP32.scala:56:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:72:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:72:14
+  input  [31:0] io_in_bits_a,	// src/scala/EX2FP32.scala:72:14
+                io_in_bits_b,	// src/scala/EX2FP32.scala:72:14
+  input  [2:0]  io_in_bits_rm,	// src/scala/EX2FP32.scala:72:14
+  input  [7:0]  io_in_bits_ctrl_index,	// src/scala/EX2FP32.scala:72:14
+  input  [2:0]  io_in_bits_ctrl_topCtrl_rm,	// src/scala/EX2FP32.scala:72:14
+  input         io_in_bits_ctrl_topCtrl_bypass,	// src/scala/EX2FP32.scala:72:14
+  input  [31:0] io_in_bits_ctrl_topCtrl_bypassVal,	// src/scala/EX2FP32.scala:72:14
+  input  [8:0]  io_in_bits_ctrl_topCtrl_yi,	// src/scala/EX2FP32.scala:72:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:72:14
+                io_out_bits_toAdd_fp_prod_sign,	// src/scala/EX2FP32.scala:72:14
+  output [7:0]  io_out_bits_toAdd_fp_prod_exp,	// src/scala/EX2FP32.scala:72:14
+  output [46:0] io_out_bits_toAdd_fp_prod_sig,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_bits_toAdd_inter_flags_isNaN,	// src/scala/EX2FP32.scala:72:14
+                io_out_bits_toAdd_inter_flags_isInf,	// src/scala/EX2FP32.scala:72:14
+                io_out_bits_toAdd_inter_flags_overflow,	// src/scala/EX2FP32.scala:72:14
+  output [2:0]  io_out_bits_toAdd_rm,	// src/scala/EX2FP32.scala:72:14
+  output [7:0]  io_out_bits_ctrl_index,	// src/scala/EX2FP32.scala:72:14
+  output [2:0]  io_out_bits_ctrl_topCtrl_rm,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_bits_ctrl_topCtrl_bypass,	// src/scala/EX2FP32.scala:72:14
+  output [31:0] io_out_bits_ctrl_topCtrl_bypassVal,	// src/scala/EX2FP32.scala:72:14
+  output [8:0]  io_out_bits_ctrl_topCtrl_yi	// src/scala/EX2FP32.scala:72:14
 );
 
-  wire        s3_ready;	// src/scala/EXPFP32.scala:28:43
-  wire        s2_ready;	// src/scala/EXPFP32.scala:28:43
-  wire        _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EXPFP32.scala:81:21
-  wire [7:0]  _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EXPFP32.scala:81:21
-  wire [46:0] _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EXPFP32.scala:81:21
-  wire [2:0]  _mulS3_io_to_fadd_rm;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:80:21
-  wire [8:0]  _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:80:21
-  wire [73:0] _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:80:21
-  wire [2:0]  _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:79:21
-  wire [2:0]  _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:79:21
-  wire [49:0] _mul_io_result;	// src/scala/EXPFP32.scala:78:21
-  reg         s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s1Pipe_rBits_mulS1Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_prod_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_shift_amt;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_exp_shifted;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_mulS1Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [49:0] s1Pipe_rBits_prod;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s1Pipe_rBits_ctrl_index;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-  wire        s1_ready = ~s1Pipe_rValid | s2_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s2Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s2Pipe_rBits_mulS2Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s2Pipe_rBits_mulS2Out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25
-  reg  [73:0] s2Pipe_rBits_mulS2Out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s2Pipe_rBits_mulS2Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s2Pipe_rBits_ctrl_index;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-  assign s2_ready = ~s2Pipe_rValid | s3_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EXPFP32.scala:26:25
-  reg  [46:0] s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s3Pipe_rBits_toAdd_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]  s3Pipe_rBits_ctrl_index;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
-  assign s3_ready = ~s3Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43
-  wire        _s2Pipe_T = s2_ready & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  wire        _s3Pipe_T = s3_ready & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:57:7
-    if (reset) begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s2Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s3Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
+  wire        s3_ready;	// src/scala/EX2FP32.scala:27:43
+  wire        s2_ready;	// src/scala/EX2FP32.scala:27:43
+  wire        _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EX2FP32.scala:80:21
+  wire [7:0]  _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EX2FP32.scala:80:21
+  wire [46:0] _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EX2FP32.scala:80:21
+  wire [2:0]  _mulS3_io_to_fadd_rm;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS2_io_out_special_case_valid;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_raw_out_sign;	// src/scala/EX2FP32.scala:79:21
+  wire [8:0]  _mulS2_io_out_raw_out_exp;	// src/scala/EX2FP32.scala:79:21
+  wire [73:0] _mulS2_io_out_raw_out_sig;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_early_overflow;	// src/scala/EX2FP32.scala:79:21
+  wire [2:0]  _mulS2_io_out_rm;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_early_overflow;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_prod_sign;	// src/scala/EX2FP32.scala:78:21
+  wire [8:0]  _mulS1_io_out_shift_amt;	// src/scala/EX2FP32.scala:78:21
+  wire [8:0]  _mulS1_io_out_exp_shifted;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_may_be_subnormal;	// src/scala/EX2FP32.scala:78:21
+  wire [2:0]  _mulS1_io_out_rm;	// src/scala/EX2FP32.scala:78:21
+  wire [49:0] _mul_io_result;	// src/scala/EX2FP32.scala:77:21
+  reg         s1Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s1Pipe_rBits_mulS1Out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_early_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_prod_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_mulS1Out_shift_amt;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_mulS1Out_exp_shifted;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_may_be_subnormal;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s1Pipe_rBits_mulS1Out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg  [49:0] s1Pipe_rBits_prod;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s1Pipe_rBits_ctrl_index;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+  wire        s1_ready = ~s1Pipe_rValid | s2_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg         s2Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s2Pipe_rBits_mulS2Out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_raw_out_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s2Pipe_rBits_mulS2Out_raw_out_exp;	// src/scala/EX2FP32.scala:25:25
+  reg  [73:0] s2Pipe_rBits_mulS2Out_raw_out_sig;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_early_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s2Pipe_rBits_mulS2Out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s2Pipe_rBits_ctrl_index;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+  assign s2_ready = ~s2Pipe_rValid | s3_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg         s3Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EX2FP32.scala:25:25
+  reg  [46:0] s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s3Pipe_rBits_toAdd_rm;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]  s3Pipe_rBits_ctrl_index;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
+  assign s3_ready = ~s3Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43
+  wire        _s2Pipe_T = s2_ready & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  wire        _s3Pipe_T = s3_ready & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:56:7
+    if (reset) begin	// src/scala/EX2FP32.scala:56:7
+      s1Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
+      s2Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
+      s3Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
     end
-    else begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= _s1Pipe_T | ~(s2_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s2Pipe_rValid <= _s2Pipe_T | ~(s3_ready & s2Pipe_rValid) & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s3Pipe_rValid <= _s3Pipe_T | ~(io_out_ready & s3Pipe_rValid) & s3Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
+    else begin	// src/scala/EX2FP32.scala:56:7
+      s1Pipe_rValid <= _s1Pipe_T | ~(s2_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s2Pipe_rValid <= _s2Pipe_T | ~(s3_ready & s2Pipe_rValid) & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s3Pipe_rValid <= _s3Pipe_T | ~(io_out_ready & s3Pipe_rValid) & s3Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
     end
     if (_s1Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s1Pipe_rBits_mulS1Out_special_case_valid <= _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_nan <= _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_inf <= _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :79:21
+      s1Pipe_rBits_mulS1Out_special_case_valid <= _mulS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_special_case_bits_nan <= _mulS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_special_case_bits_inf <= _mulS1_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25, :78:21
       s1Pipe_rBits_mulS1Out_special_case_bits_hasZero <=
-        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_early_overflow <= _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_prod_sign <= _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_shift_amt <= _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_exp_shifted <= _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_may_be_subnormal <= _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_rm <= _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_prod <= _mul_io_result;	// src/scala/EXPFP32.scala:26:25, :78:21
-      s1Pipe_rBits_ctrl_index <= io_in_bits_ctrl_index;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_rm <= io_in_bits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_bypass <= io_in_bits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_bypassVal <= io_in_bits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_topCtrl_yi <= io_in_bits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
+        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_early_overflow <= _mulS1_io_out_early_overflow;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_prod_sign <= _mulS1_io_out_prod_sign;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_shift_amt <= _mulS1_io_out_shift_amt;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_exp_shifted <= _mulS1_io_out_exp_shifted;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_may_be_subnormal <= _mulS1_io_out_may_be_subnormal;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_rm <= _mulS1_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_prod <= _mul_io_result;	// src/scala/EX2FP32.scala:25:25, :77:21
+      s1Pipe_rBits_ctrl_index <= io_in_bits_ctrl_index;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_rm <= io_in_bits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_bypass <= io_in_bits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_bypassVal <= io_in_bits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_topCtrl_yi <= io_in_bits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
     end
     if (_s2Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s2Pipe_rBits_mulS2Out_special_case_valid <= _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_nan <= _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_inf <= _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :80:21
+      s2Pipe_rBits_mulS2Out_special_case_valid <= _mulS2_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_special_case_bits_nan <= _mulS2_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_special_case_bits_inf <= _mulS2_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25, :79:21
       s2Pipe_rBits_mulS2Out_special_case_bits_hasZero <=
-        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sign <= _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_exp <= _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sig <= _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_early_overflow <= _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_rm <= _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_ctrl_index <= s1Pipe_rBits_ctrl_index;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_rm <= s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_bypass <= s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_bypassVal <= s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_topCtrl_yi <= s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
+        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_sign <= _mulS2_io_out_raw_out_sign;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_exp <= _mulS2_io_out_raw_out_exp;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_sig <= _mulS2_io_out_raw_out_sig;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_early_overflow <= _mulS2_io_out_early_overflow;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_rm <= _mulS2_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_ctrl_index <= s1Pipe_rBits_ctrl_index;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_rm <= s1Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_bypass <= s1Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_bypassVal <= s1Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_topCtrl_yi <= s1Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
     end
     if (_s3Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s3Pipe_rBits_toAdd_fp_prod_sign <= _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_fp_prod_exp <= _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_fp_prod_sig <= _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_inter_flags_isNaN <= _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_inter_flags_isInf <= _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_inter_flags_overflow <= _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_toAdd_rm <= _mulS3_io_to_fadd_rm;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_ctrl_index <= s2Pipe_rBits_ctrl_index;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_rm <= s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_bypass <= s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_bypassVal <= s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_topCtrl_yi <= s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25
+      s3Pipe_rBits_toAdd_fp_prod_sign <= _mulS3_io_to_fadd_fp_prod_sign;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_fp_prod_exp <= _mulS3_io_to_fadd_fp_prod_exp;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_fp_prod_sig <= _mulS3_io_to_fadd_fp_prod_sig;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_inter_flags_isNaN <= _mulS3_io_to_fadd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_inter_flags_isInf <= _mulS3_io_to_fadd_inter_flags_isInf;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_inter_flags_overflow <= _mulS3_io_to_fadd_inter_flags_overflow;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_toAdd_rm <= _mulS3_io_to_fadd_rm;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_ctrl_index <= s2Pipe_rBits_ctrl_index;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_rm <= s2Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_bypass <= s2Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_bypassVal <= s2Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_topCtrl_yi <= s2Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25
     end
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:57:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:56:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:56:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:56:7
     `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:16];	// src/scala/EXPFP32.scala:57:7
-    initial begin	// src/scala/EXPFP32.scala:57:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
+    logic [31:0] _RANDOM[0:16];	// src/scala/EX2FP32.scala:56:7
+    initial begin	// src/scala/EX2FP32.scala:56:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:56:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:56:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:57:7
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:56:7
         for (logic [4:0] i = 5'h0; i < 5'h11; i += 5'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:57:7
-        end	// src/scala/EXPFP32.scala:57:7
-        s1Pipe_rValid = _RANDOM[5'h0][0];	// src/scala/EXPFP32.scala:25:29, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_valid = _RANDOM[5'h0][1];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_nan = _RANDOM[5'h0][2];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_inf = _RANDOM[5'h0][3];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_hasZero = _RANDOM[5'h0][5];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_early_overflow = _RANDOM[5'h0][6];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_prod_sign = _RANDOM[5'h0][7];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_shift_amt = _RANDOM[5'h0][16:8];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_exp_shifted = _RANDOM[5'h0][25:17];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_may_be_subnormal = _RANDOM[5'h0][26];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_rm = _RANDOM[5'h0][29:27];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_prod = {_RANDOM[5'h0][31:30], _RANDOM[5'h1], _RANDOM[5'h2][15:0]};	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_ctrl_index = _RANDOM[5'h3][23:16];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h3][26:24];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h3][27];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'h3][31:28], _RANDOM[5'h4][27:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_topCtrl_yi = {_RANDOM[5'h4][31:28], _RANDOM[5'h5][4:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rValid = _RANDOM[5'h5][5];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_valid = _RANDOM[5'h5][6];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_nan = _RANDOM[5'h5][7];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_inf = _RANDOM[5'h5][8];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_hasZero = _RANDOM[5'h5][10];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_sign = _RANDOM[5'h5][11];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_exp = _RANDOM[5'h5][20:12];	// src/scala/EXPFP32.scala:26:25, :57:7
+          _RANDOM[i] = `RANDOM;	// src/scala/EX2FP32.scala:56:7
+        end	// src/scala/EX2FP32.scala:56:7
+        s1Pipe_rValid = _RANDOM[5'h0][0];	// src/scala/EX2FP32.scala:24:29, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_valid = _RANDOM[5'h0][1];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_nan = _RANDOM[5'h0][2];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_inf = _RANDOM[5'h0][3];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_hasZero = _RANDOM[5'h0][5];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_early_overflow = _RANDOM[5'h0][6];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_prod_sign = _RANDOM[5'h0][7];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_shift_amt = _RANDOM[5'h0][16:8];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_exp_shifted = _RANDOM[5'h0][25:17];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_may_be_subnormal = _RANDOM[5'h0][26];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_rm = _RANDOM[5'h0][29:27];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_prod = {_RANDOM[5'h0][31:30], _RANDOM[5'h1], _RANDOM[5'h2][15:0]};	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_ctrl_index = _RANDOM[5'h3][23:16];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h3][26:24];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h3][27];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'h3][31:28], _RANDOM[5'h4][27:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_topCtrl_yi = {_RANDOM[5'h4][31:28], _RANDOM[5'h5][4:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rValid = _RANDOM[5'h5][5];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_valid = _RANDOM[5'h5][6];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_nan = _RANDOM[5'h5][7];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_inf = _RANDOM[5'h5][8];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_hasZero = _RANDOM[5'h5][10];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_raw_out_sign = _RANDOM[5'h5][11];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_raw_out_exp = _RANDOM[5'h5][20:12];	// src/scala/EX2FP32.scala:25:25, :56:7
         s2Pipe_rBits_mulS2Out_raw_out_sig =
-          {_RANDOM[5'h5][31:21], _RANDOM[5'h6], _RANDOM[5'h7][30:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_early_overflow = _RANDOM[5'h7][31];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_rm = _RANDOM[5'h8][2:0];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_index = _RANDOM[5'h9][10:3];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h9][13:11];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h9][14];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'h9][31:15], _RANDOM[5'hA][14:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'hA][23:15];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rValid = _RANDOM[5'hA][24];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s3Pipe_rBits_toAdd_fp_prod_sign = _RANDOM[5'hB][25];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_fp_prod_exp = {_RANDOM[5'hB][31:26], _RANDOM[5'hC][1:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_fp_prod_sig = {_RANDOM[5'hC][31:2], _RANDOM[5'hD][16:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_inter_flags_isNaN = _RANDOM[5'hD][17];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_inter_flags_isInf = _RANDOM[5'hD][18];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_inter_flags_overflow = _RANDOM[5'hD][20];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_toAdd_rm = _RANDOM[5'hD][23:21];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_index = _RANDOM[5'hE][31:24];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'hF][2:0];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'hF][3];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'hF][31:4], _RANDOM[5'h10][3:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'h10][12:4];	// src/scala/EXPFP32.scala:26:25, :57:7
+          {_RANDOM[5'h5][31:21], _RANDOM[5'h6], _RANDOM[5'h7][30:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_early_overflow = _RANDOM[5'h7][31];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_rm = _RANDOM[5'h8][2:0];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_index = _RANDOM[5'h9][10:3];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'h9][13:11];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'h9][14];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'h9][31:15], _RANDOM[5'hA][14:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'hA][23:15];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rValid = _RANDOM[5'hA][24];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s3Pipe_rBits_toAdd_fp_prod_sign = _RANDOM[5'hB][25];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_fp_prod_exp = {_RANDOM[5'hB][31:26], _RANDOM[5'hC][1:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_fp_prod_sig = {_RANDOM[5'hC][31:2], _RANDOM[5'hD][16:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_inter_flags_isNaN = _RANDOM[5'hD][17];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_inter_flags_isInf = _RANDOM[5'hD][18];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_inter_flags_overflow = _RANDOM[5'hD][20];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_toAdd_rm = _RANDOM[5'hD][23:21];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_index = _RANDOM[5'hE][31:24];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_rm = _RANDOM[5'hF][2:0];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_bypass = _RANDOM[5'hF][3];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_bypassVal = {_RANDOM[5'hF][31:4], _RANDOM[5'h10][3:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_topCtrl_yi = _RANDOM[5'h10][12:4];	// src/scala/EX2FP32.scala:25:25, :56:7
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:56:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:56:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  Multiplier mul (	// src/scala/EXPFP32.scala:78:21
-    .io_a      ({1'h0, |(io_in_bits_a[30:23]), io_in_bits_a[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EXPFP32.scala:89:12
-    .io_b      ({1'h0, |(io_in_bits_b[30:23]), io_in_bits_b[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EXPFP32.scala:90:12
+  Multiplier mul (	// src/scala/EX2FP32.scala:77:21
+    .io_a      ({1'h0, |(io_in_bits_a[30:23]), io_in_bits_a[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EX2FP32.scala:88:12
+    .io_b      ({1'h0, |(io_in_bits_b[30:23]), io_in_bits_b[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EX2FP32.scala:89:12
     .io_result (_mul_io_result)
   );
-  FMUL_s1 mulS1 (	// src/scala/EXPFP32.scala:79:21
+  FMUL_s1 mulS1 (	// src/scala/EX2FP32.scala:78:21
     .io_a                             (io_in_bits_a),
     .io_b                             (io_in_bits_b),
     .io_rm                            (io_in_bits_rm),
@@ -5475,18 +5223,18 @@ module MULFP32_2(	// src/scala/EXPFP32.scala:57:7
     .io_out_may_be_subnormal          (_mulS1_io_out_may_be_subnormal),
     .io_out_rm                        (_mulS1_io_out_rm)
   );
-  FMUL_s2 mulS2 (	// src/scala/EXPFP32.scala:80:21
-    .io_in_special_case_valid         (s1Pipe_rBits_mulS1Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan      (s1Pipe_rBits_mulS1Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf      (s1Pipe_rBits_mulS1Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero  (s1Pipe_rBits_mulS1Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow             (s1Pipe_rBits_mulS1Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_prod_sign                  (s1Pipe_rBits_mulS1Out_prod_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_shift_amt                  (s1Pipe_rBits_mulS1Out_shift_amt),	// src/scala/EXPFP32.scala:26:25
-    .io_in_exp_shifted                (s1Pipe_rBits_mulS1Out_exp_shifted),	// src/scala/EXPFP32.scala:26:25
-    .io_in_may_be_subnormal           (s1Pipe_rBits_mulS1Out_may_be_subnormal),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                         (s1Pipe_rBits_mulS1Out_rm),	// src/scala/EXPFP32.scala:26:25
-    .io_prod                          (s1Pipe_rBits_prod[47:0]),	// src/scala/EXPFP32.scala:26:25, :106:17
+  FMUL_s2 mulS2 (	// src/scala/EX2FP32.scala:79:21
+    .io_in_special_case_valid         (s1Pipe_rBits_mulS1Out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan      (s1Pipe_rBits_mulS1Out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf      (s1Pipe_rBits_mulS1Out_special_case_bits_inf),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_hasZero  (s1Pipe_rBits_mulS1Out_special_case_bits_hasZero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_early_overflow             (s1Pipe_rBits_mulS1Out_early_overflow),	// src/scala/EX2FP32.scala:25:25
+    .io_in_prod_sign                  (s1Pipe_rBits_mulS1Out_prod_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_shift_amt                  (s1Pipe_rBits_mulS1Out_shift_amt),	// src/scala/EX2FP32.scala:25:25
+    .io_in_exp_shifted                (s1Pipe_rBits_mulS1Out_exp_shifted),	// src/scala/EX2FP32.scala:25:25
+    .io_in_may_be_subnormal           (s1Pipe_rBits_mulS1Out_may_be_subnormal),	// src/scala/EX2FP32.scala:25:25
+    .io_in_rm                         (s1Pipe_rBits_mulS1Out_rm),	// src/scala/EX2FP32.scala:25:25
+    .io_prod                          (s1Pipe_rBits_prod[47:0]),	// src/scala/EX2FP32.scala:25:25, :105:17
     .io_out_special_case_valid        (_mulS2_io_out_special_case_valid),
     .io_out_special_case_bits_nan     (_mulS2_io_out_special_case_bits_nan),
     .io_out_special_case_bits_inf     (_mulS2_io_out_special_case_bits_inf),
@@ -5497,16 +5245,16 @@ module MULFP32_2(	// src/scala/EXPFP32.scala:57:7
     .io_out_early_overflow            (_mulS2_io_out_early_overflow),
     .io_out_rm                        (_mulS2_io_out_rm)
   );
-  FMUL_s3 mulS3 (	// src/scala/EXPFP32.scala:81:21
-    .io_in_special_case_valid        (s2Pipe_rBits_mulS2Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan     (s2Pipe_rBits_mulS2Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf     (s2Pipe_rBits_mulS2Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero (s2Pipe_rBits_mulS2Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sign              (s2Pipe_rBits_mulS2Out_raw_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_exp               (s2Pipe_rBits_mulS2Out_raw_out_exp),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sig               (s2Pipe_rBits_mulS2Out_raw_out_sig),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow            (s2Pipe_rBits_mulS2Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                        (s2Pipe_rBits_mulS2Out_rm),	// src/scala/EXPFP32.scala:26:25
+  FMUL_s3 mulS3 (	// src/scala/EX2FP32.scala:80:21
+    .io_in_special_case_valid        (s2Pipe_rBits_mulS2Out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan     (s2Pipe_rBits_mulS2Out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf     (s2Pipe_rBits_mulS2Out_special_case_bits_inf),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_hasZero (s2Pipe_rBits_mulS2Out_special_case_bits_hasZero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_sign              (s2Pipe_rBits_mulS2Out_raw_out_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_exp               (s2Pipe_rBits_mulS2Out_raw_out_exp),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_sig               (s2Pipe_rBits_mulS2Out_raw_out_sig),	// src/scala/EX2FP32.scala:25:25
+    .io_in_early_overflow            (s2Pipe_rBits_mulS2Out_early_overflow),	// src/scala/EX2FP32.scala:25:25
+    .io_in_rm                        (s2Pipe_rBits_mulS2Out_rm),	// src/scala/EX2FP32.scala:25:25
     .io_result                       (/* unused */),
     .io_to_fadd_fp_prod_sign         (_mulS3_io_to_fadd_fp_prod_sign),
     .io_to_fadd_fp_prod_exp          (_mulS3_io_to_fadd_fp_prod_exp),
@@ -5516,115 +5264,115 @@ module MULFP32_2(	// src/scala/EXPFP32.scala:57:7
     .io_to_fadd_inter_flags_overflow (_mulS3_io_to_fadd_inter_flags_overflow),
     .io_to_fadd_rm                   (_mulS3_io_to_fadd_rm)
   );
-  assign io_in_ready = s1_ready;	// src/scala/EXPFP32.scala:28:43, :57:7
-  assign io_out_valid = s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :57:7
-  assign io_out_bits_toAdd_fp_prod_sign = s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_fp_prod_exp = s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_fp_prod_sig = s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_inter_flags_isNaN = s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_inter_flags_isInf = s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_inter_flags_overflow = s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_toAdd_rm = s3Pipe_rBits_toAdd_rm;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_index = s3Pipe_rBits_ctrl_index;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_rm = s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_bypass = s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_bypassVal = s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_topCtrl_yi = s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25, :57:7
+  assign io_in_ready = s1_ready;	// src/scala/EX2FP32.scala:27:43, :56:7
+  assign io_out_valid = s3Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :56:7
+  assign io_out_bits_toAdd_fp_prod_sign = s3Pipe_rBits_toAdd_fp_prod_sign;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_fp_prod_exp = s3Pipe_rBits_toAdd_fp_prod_exp;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_fp_prod_sig = s3Pipe_rBits_toAdd_fp_prod_sig;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_inter_flags_isNaN = s3Pipe_rBits_toAdd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_inter_flags_isInf = s3Pipe_rBits_toAdd_inter_flags_isInf;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_inter_flags_overflow = s3Pipe_rBits_toAdd_inter_flags_overflow;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_toAdd_rm = s3Pipe_rBits_toAdd_rm;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_index = s3Pipe_rBits_ctrl_index;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_rm = s3Pipe_rBits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_bypass = s3Pipe_rBits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_bypassVal = s3Pipe_rBits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_topCtrl_yi = s3Pipe_rBits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25, :56:7
 endmodule
 
-module CMAFP32LUTParallel(	// src/scala/EXPFP32.scala:206:7
-  input         clock,	// src/scala/EXPFP32.scala:206:7
-                reset,	// src/scala/EXPFP32.scala:206:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:224:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:224:14
-  input  [31:0] io_in_bits_a,	// src/scala/EXPFP32.scala:224:14
-                io_in_bits_b,	// src/scala/EXPFP32.scala:224:14
-  input  [7:0]  io_in_bits_index,	// src/scala/EXPFP32.scala:224:14
-  input  [2:0]  io_in_bits_rm,	// src/scala/EXPFP32.scala:224:14
-                io_in_bits_ctrl_rm,	// src/scala/EXPFP32.scala:224:14
-  input         io_in_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:224:14
-  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:224:14
-  input  [8:0]  io_in_bits_ctrl_yi,	// src/scala/EXPFP32.scala:224:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:224:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:224:14
-  output [31:0] io_out_bits_result,	// src/scala/EXPFP32.scala:224:14
-                io_out_bits_value,	// src/scala/EXPFP32.scala:224:14
-  output [2:0]  io_out_bits_ctrl_rm,	// src/scala/EXPFP32.scala:224:14
-  output        io_out_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:224:14
-  output [31:0] io_out_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:224:14
-  output [8:0]  io_out_bits_ctrl_yi	// src/scala/EXPFP32.scala:224:14
+module CMAFP32LUTParallel(	// src/scala/EX2FP32.scala:205:7
+  input         clock,	// src/scala/EX2FP32.scala:205:7
+                reset,	// src/scala/EX2FP32.scala:205:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:223:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:223:14
+  input  [31:0] io_in_bits_a,	// src/scala/EX2FP32.scala:223:14
+                io_in_bits_b,	// src/scala/EX2FP32.scala:223:14
+  input  [7:0]  io_in_bits_index,	// src/scala/EX2FP32.scala:223:14
+  input  [2:0]  io_in_bits_rm,	// src/scala/EX2FP32.scala:223:14
+                io_in_bits_ctrl_rm,	// src/scala/EX2FP32.scala:223:14
+  input         io_in_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:223:14
+  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EX2FP32.scala:223:14
+  input  [8:0]  io_in_bits_ctrl_yi,	// src/scala/EX2FP32.scala:223:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:223:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:223:14
+  output [31:0] io_out_bits_result,	// src/scala/EX2FP32.scala:223:14
+                io_out_bits_value,	// src/scala/EX2FP32.scala:223:14
+  output [2:0]  io_out_bits_ctrl_rm,	// src/scala/EX2FP32.scala:223:14
+  output        io_out_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:223:14
+  output [31:0] io_out_bits_ctrl_bypassVal,	// src/scala/EX2FP32.scala:223:14
+  output [8:0]  io_out_bits_ctrl_yi	// src/scala/EX2FP32.scala:223:14
 );
 
-  wire               s5_ready;	// src/scala/EXPFP32.scala:28:43
-  wire [31:0]        _addS2_io_result;	// src/scala/EXPFP32.scala:236:21
-  wire [2:0]         _addS1_io_out_rm;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_far_path_out_sign;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_near_path_out_sign;	// src/scala/EXPFP32.scala:235:21
-  wire [7:0]         _addS1_io_out_near_path_out_exp;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_small_add;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_far_path_mul_of;	// src/scala/EXPFP32.scala:235:21
-  wire [47:0]        _addS1_io_out_far_sig_a;	// src/scala/EXPFP32.scala:235:21
-  wire [51:0]        _addS1_io_out_far_sig_b;	// src/scala/EXPFP32.scala:235:21
-  wire [7:0]         _addS1_io_out_far_exp_a_vec_0;	// src/scala/EXPFP32.scala:235:21
-  wire [7:0]         _addS1_io_out_far_exp_a_vec_1;	// src/scala/EXPFP32.scala:235:21
-  wire [7:0]         _addS1_io_out_far_exp_a_vec_2;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_near_path_sig_is_zero;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_near_path_lza_error;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_near_path_int_bit;	// src/scala/EXPFP32.scala:235:21
-  wire [48:0]        _addS1_io_out_near_path_sig_raw;	// src/scala/EXPFP32.scala:235:21
-  wire [5:0]         _addS1_io_out_near_path_lzc;	// src/scala/EXPFP32.scala:235:21
-  wire               _addS1_io_out_sel_far_path;	// src/scala/EXPFP32.scala:235:21
-  wire               _mul_io_out_valid;	// src/scala/EXPFP32.scala:234:21
-  wire               _mul_io_out_bits_toAdd_fp_prod_sign;	// src/scala/EXPFP32.scala:234:21
-  wire [7:0]         _mul_io_out_bits_toAdd_fp_prod_exp;	// src/scala/EXPFP32.scala:234:21
-  wire [46:0]        _mul_io_out_bits_toAdd_fp_prod_sig;	// src/scala/EXPFP32.scala:234:21
-  wire               _mul_io_out_bits_toAdd_inter_flags_isNaN;	// src/scala/EXPFP32.scala:234:21
-  wire               _mul_io_out_bits_toAdd_inter_flags_isInf;	// src/scala/EXPFP32.scala:234:21
-  wire               _mul_io_out_bits_toAdd_inter_flags_overflow;	// src/scala/EXPFP32.scala:234:21
-  wire [2:0]         _mul_io_out_bits_toAdd_rm;	// src/scala/EXPFP32.scala:234:21
-  wire [7:0]         _mul_io_out_bits_ctrl_index;	// src/scala/EXPFP32.scala:234:21
-  wire [2:0]         _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:234:21
-  wire               _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:234:21
-  wire [31:0]        _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:234:21
-  wire [8:0]         _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:234:21
-  reg                s4Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [2:0]         s4Pipe_rBits_out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_far_path_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_near_path_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]         s4Pipe_rBits_out_near_path_out_exp;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_special_case_bits_inf_sign;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_small_add;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_far_path_mul_of;	// src/scala/EXPFP32.scala:26:25
-  reg  [47:0]        s4Pipe_rBits_out_far_sig_a;	// src/scala/EXPFP32.scala:26:25
-  reg  [51:0]        s4Pipe_rBits_out_far_sig_b;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]         s4Pipe_rBits_out_far_exp_a_vec_0;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]         s4Pipe_rBits_out_far_exp_a_vec_1;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]         s4Pipe_rBits_out_far_exp_a_vec_2;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_near_path_sig_is_zero;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_near_path_lza_error;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_near_path_int_bit;	// src/scala/EXPFP32.scala:26:25
-  reg  [48:0]        s4Pipe_rBits_out_near_path_sig_raw;	// src/scala/EXPFP32.scala:26:25
-  reg  [5:0]         s4Pipe_rBits_out_near_path_lzc;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_out_sel_far_path;	// src/scala/EXPFP32.scala:26:25
-  reg  [7:0]         s4Pipe_rBits_index;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]         s4Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg                s4Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0]        s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]         s4Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-  wire               s4_ready = ~s4Pipe_rValid | s5_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg                s5Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [31:0]        s5Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0]        s5Pipe_rBits_value;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]         s5Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-  reg                s5Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0]        s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]         s5Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-  assign s5_ready = ~s5Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
+  wire               s5_ready;	// src/scala/EX2FP32.scala:27:43
+  wire [31:0]        _addS2_io_result;	// src/scala/EX2FP32.scala:235:21
+  wire [2:0]         _addS1_io_out_rm;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_far_path_out_sign;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_near_path_out_sign;	// src/scala/EX2FP32.scala:234:21
+  wire [7:0]         _addS1_io_out_near_path_out_exp;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_small_add;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_far_path_mul_of;	// src/scala/EX2FP32.scala:234:21
+  wire [47:0]        _addS1_io_out_far_sig_a;	// src/scala/EX2FP32.scala:234:21
+  wire [51:0]        _addS1_io_out_far_sig_b;	// src/scala/EX2FP32.scala:234:21
+  wire [7:0]         _addS1_io_out_far_exp_a_vec_0;	// src/scala/EX2FP32.scala:234:21
+  wire [7:0]         _addS1_io_out_far_exp_a_vec_1;	// src/scala/EX2FP32.scala:234:21
+  wire [7:0]         _addS1_io_out_far_exp_a_vec_2;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_near_path_sig_is_zero;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_near_path_lza_error;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_near_path_int_bit;	// src/scala/EX2FP32.scala:234:21
+  wire [48:0]        _addS1_io_out_near_path_sig_raw;	// src/scala/EX2FP32.scala:234:21
+  wire [5:0]         _addS1_io_out_near_path_lzc;	// src/scala/EX2FP32.scala:234:21
+  wire               _addS1_io_out_sel_far_path;	// src/scala/EX2FP32.scala:234:21
+  wire               _mul_io_out_valid;	// src/scala/EX2FP32.scala:233:21
+  wire               _mul_io_out_bits_toAdd_fp_prod_sign;	// src/scala/EX2FP32.scala:233:21
+  wire [7:0]         _mul_io_out_bits_toAdd_fp_prod_exp;	// src/scala/EX2FP32.scala:233:21
+  wire [46:0]        _mul_io_out_bits_toAdd_fp_prod_sig;	// src/scala/EX2FP32.scala:233:21
+  wire               _mul_io_out_bits_toAdd_inter_flags_isNaN;	// src/scala/EX2FP32.scala:233:21
+  wire               _mul_io_out_bits_toAdd_inter_flags_isInf;	// src/scala/EX2FP32.scala:233:21
+  wire               _mul_io_out_bits_toAdd_inter_flags_overflow;	// src/scala/EX2FP32.scala:233:21
+  wire [2:0]         _mul_io_out_bits_toAdd_rm;	// src/scala/EX2FP32.scala:233:21
+  wire [7:0]         _mul_io_out_bits_ctrl_index;	// src/scala/EX2FP32.scala:233:21
+  wire [2:0]         _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:233:21
+  wire               _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:233:21
+  wire [31:0]        _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:233:21
+  wire [8:0]         _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:233:21
+  reg                s4Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [2:0]         s4Pipe_rBits_out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_far_path_out_sign;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_near_path_out_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]         s4Pipe_rBits_out_near_path_out_exp;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_special_case_bits_inf_sign;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_small_add;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_far_path_mul_of;	// src/scala/EX2FP32.scala:25:25
+  reg  [47:0]        s4Pipe_rBits_out_far_sig_a;	// src/scala/EX2FP32.scala:25:25
+  reg  [51:0]        s4Pipe_rBits_out_far_sig_b;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]         s4Pipe_rBits_out_far_exp_a_vec_0;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]         s4Pipe_rBits_out_far_exp_a_vec_1;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]         s4Pipe_rBits_out_far_exp_a_vec_2;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_near_path_sig_is_zero;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_near_path_lza_error;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_near_path_int_bit;	// src/scala/EX2FP32.scala:25:25
+  reg  [48:0]        s4Pipe_rBits_out_near_path_sig_raw;	// src/scala/EX2FP32.scala:25:25
+  reg  [5:0]         s4Pipe_rBits_out_near_path_lzc;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_out_sel_far_path;	// src/scala/EX2FP32.scala:25:25
+  reg  [7:0]         s4Pipe_rBits_index;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]         s4Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg                s4Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0]        s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]         s4Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+  wire               s4_ready = ~s4Pipe_rValid | s5_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg                s5Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [31:0]        s5Pipe_rBits_result;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0]        s5Pipe_rBits_value;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]         s5Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+  reg                s5Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0]        s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]         s5Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+  assign s5_ready = ~s5Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
   wire [255:0][31:0] _GEN =
     '{32'h3F00B1ED,
       32'h3F0164D2,
@@ -5881,110 +5629,110 @@ module CMAFP32LUTParallel(	// src/scala/EXPFP32.scala:206:7
       32'h3F8218AF,
       32'h3F8164D2,
       32'h3F80B1ED,
-      32'h3F800000};	// src/scala/EXPFP32.scala:284:17
-  wire               _s4Pipe_T = s4_ready & _mul_io_out_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43, :234:21
-  wire               _s5Pipe_T = s5_ready & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:206:7
-    if (reset) begin	// src/scala/EXPFP32.scala:206:7
-      s4Pipe_rValid <= 1'h0;	// src/scala/EXPFP32.scala:25:29
-      s5Pipe_rValid <= 1'h0;	// src/scala/EXPFP32.scala:25:29
+      32'h3F800000};	// src/scala/EX2FP32.scala:283:17
+  wire               _s4Pipe_T = s4_ready & _mul_io_out_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43, :233:21
+  wire               _s5Pipe_T = s5_ready & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:205:7
+    if (reset) begin	// src/scala/EX2FP32.scala:205:7
+      s4Pipe_rValid <= 1'h0;	// src/scala/EX2FP32.scala:24:29
+      s5Pipe_rValid <= 1'h0;	// src/scala/EX2FP32.scala:24:29
     end
-    else begin	// src/scala/EXPFP32.scala:206:7
-      s4Pipe_rValid <= _s4Pipe_T | ~(s5_ready & s4Pipe_rValid) & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s5Pipe_rValid <= _s5Pipe_T | ~(io_out_ready & s5Pipe_rValid) & s5Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
+    else begin	// src/scala/EX2FP32.scala:205:7
+      s4Pipe_rValid <= _s4Pipe_T | ~(s5_ready & s4Pipe_rValid) & s4Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s5Pipe_rValid <= _s5Pipe_T | ~(io_out_ready & s5Pipe_rValid) & s5Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
     end
     if (_s4Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s4Pipe_rBits_out_rm <= _addS1_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_far_path_out_sign <= _addS1_io_out_far_path_out_sign;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_near_path_out_sign <= _addS1_io_out_near_path_out_sign;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_near_path_out_exp <= _addS1_io_out_near_path_out_exp;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_special_case_valid <= _addS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_special_case_bits_nan <= _addS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :235:21
+      s4Pipe_rBits_out_rm <= _addS1_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_far_path_out_sign <= _addS1_io_out_far_path_out_sign;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_near_path_out_sign <= _addS1_io_out_near_path_out_sign;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_near_path_out_exp <= _addS1_io_out_near_path_out_exp;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_special_case_valid <= _addS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_special_case_bits_nan <= _addS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :234:21
       s4Pipe_rBits_out_special_case_bits_inf_sign <=
-        _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_small_add <= _addS1_io_out_small_add;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_far_path_mul_of <= _addS1_io_out_far_path_mul_of;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_far_sig_a <= _addS1_io_out_far_sig_a;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_far_sig_b <= _addS1_io_out_far_sig_b;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_far_exp_a_vec_0 <= _addS1_io_out_far_exp_a_vec_0;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_far_exp_a_vec_1 <= _addS1_io_out_far_exp_a_vec_1;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_far_exp_a_vec_2 <= _addS1_io_out_far_exp_a_vec_2;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_near_path_sig_is_zero <= _addS1_io_out_near_path_sig_is_zero;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_near_path_lza_error <= _addS1_io_out_near_path_lza_error;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_near_path_int_bit <= _addS1_io_out_near_path_int_bit;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_near_path_sig_raw <= _addS1_io_out_near_path_sig_raw;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_near_path_lzc <= _addS1_io_out_near_path_lzc;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_out_sel_far_path <= _addS1_io_out_sel_far_path;	// src/scala/EXPFP32.scala:26:25, :235:21
-      s4Pipe_rBits_index <= _mul_io_out_bits_ctrl_index;	// src/scala/EXPFP32.scala:26:25, :234:21
-      s4Pipe_rBits_ctrl_rm <= _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EXPFP32.scala:26:25, :234:21
-      s4Pipe_rBits_ctrl_bypass <= _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EXPFP32.scala:26:25, :234:21
-      s4Pipe_rBits_ctrl_bypassVal <= _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :234:21
-      s4Pipe_rBits_ctrl_yi <= _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EXPFP32.scala:26:25, :234:21
+        _addS1_io_out_special_case_bits_inf_sign;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_small_add <= _addS1_io_out_small_add;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_far_path_mul_of <= _addS1_io_out_far_path_mul_of;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_far_sig_a <= _addS1_io_out_far_sig_a;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_far_sig_b <= _addS1_io_out_far_sig_b;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_far_exp_a_vec_0 <= _addS1_io_out_far_exp_a_vec_0;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_far_exp_a_vec_1 <= _addS1_io_out_far_exp_a_vec_1;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_far_exp_a_vec_2 <= _addS1_io_out_far_exp_a_vec_2;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_near_path_sig_is_zero <= _addS1_io_out_near_path_sig_is_zero;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_near_path_lza_error <= _addS1_io_out_near_path_lza_error;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_near_path_int_bit <= _addS1_io_out_near_path_int_bit;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_near_path_sig_raw <= _addS1_io_out_near_path_sig_raw;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_near_path_lzc <= _addS1_io_out_near_path_lzc;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_out_sel_far_path <= _addS1_io_out_sel_far_path;	// src/scala/EX2FP32.scala:25:25, :234:21
+      s4Pipe_rBits_index <= _mul_io_out_bits_ctrl_index;	// src/scala/EX2FP32.scala:25:25, :233:21
+      s4Pipe_rBits_ctrl_rm <= _mul_io_out_bits_ctrl_topCtrl_rm;	// src/scala/EX2FP32.scala:25:25, :233:21
+      s4Pipe_rBits_ctrl_bypass <= _mul_io_out_bits_ctrl_topCtrl_bypass;	// src/scala/EX2FP32.scala:25:25, :233:21
+      s4Pipe_rBits_ctrl_bypassVal <= _mul_io_out_bits_ctrl_topCtrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :233:21
+      s4Pipe_rBits_ctrl_yi <= _mul_io_out_bits_ctrl_topCtrl_yi;	// src/scala/EX2FP32.scala:25:25, :233:21
     end
     if (_s5Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s5Pipe_rBits_result <= _addS2_io_result;	// src/scala/EXPFP32.scala:26:25, :236:21
-      s5Pipe_rBits_value <= _GEN[s4Pipe_rBits_index];	// src/scala/EXPFP32.scala:26:25, :284:17
-      s5Pipe_rBits_ctrl_rm <= s4Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_bypass <= s4Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_bypassVal <= s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s5Pipe_rBits_ctrl_yi <= s4Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
+      s5Pipe_rBits_result <= _addS2_io_result;	// src/scala/EX2FP32.scala:25:25, :235:21
+      s5Pipe_rBits_value <= _GEN[s4Pipe_rBits_index];	// src/scala/EX2FP32.scala:25:25, :283:17
+      s5Pipe_rBits_ctrl_rm <= s4Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_bypass <= s4Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_bypassVal <= s4Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s5Pipe_rBits_ctrl_yi <= s4Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
     end
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:206:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:206:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:206:7
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:205:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:205:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:205:7
     `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:13];	// src/scala/EXPFP32.scala:206:7
-    initial begin	// src/scala/EXPFP32.scala:206:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:206:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:206:7
+    logic [31:0] _RANDOM[0:13];	// src/scala/EX2FP32.scala:205:7
+    initial begin	// src/scala/EX2FP32.scala:205:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:205:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:205:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:206:7
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:205:7
         for (logic [3:0] i = 4'h0; i < 4'hE; i += 4'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:206:7
-        end	// src/scala/EXPFP32.scala:206:7
-        s4Pipe_rValid = _RANDOM[4'h0][0];	// src/scala/EXPFP32.scala:25:29, :206:7
-        s4Pipe_rBits_out_rm = _RANDOM[4'h0][3:1];	// src/scala/EXPFP32.scala:25:29, :26:25, :206:7
-        s4Pipe_rBits_out_far_path_out_sign = _RANDOM[4'h0][4];	// src/scala/EXPFP32.scala:25:29, :26:25, :206:7
-        s4Pipe_rBits_out_near_path_out_sign = _RANDOM[4'h1][8];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_near_path_out_exp = _RANDOM[4'h1][16:9];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_special_case_valid = _RANDOM[4'h2][12];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_special_case_bits_nan = _RANDOM[4'h2][14];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_special_case_bits_inf_sign = _RANDOM[4'h2][15];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_small_add = _RANDOM[4'h2][16];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_far_path_mul_of = _RANDOM[4'h2][17];	// src/scala/EXPFP32.scala:26:25, :206:7
+          _RANDOM[i] = `RANDOM;	// src/scala/EX2FP32.scala:205:7
+        end	// src/scala/EX2FP32.scala:205:7
+        s4Pipe_rValid = _RANDOM[4'h0][0];	// src/scala/EX2FP32.scala:24:29, :205:7
+        s4Pipe_rBits_out_rm = _RANDOM[4'h0][3:1];	// src/scala/EX2FP32.scala:24:29, :25:25, :205:7
+        s4Pipe_rBits_out_far_path_out_sign = _RANDOM[4'h0][4];	// src/scala/EX2FP32.scala:24:29, :25:25, :205:7
+        s4Pipe_rBits_out_near_path_out_sign = _RANDOM[4'h1][8];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_near_path_out_exp = _RANDOM[4'h1][16:9];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_special_case_valid = _RANDOM[4'h2][12];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_special_case_bits_nan = _RANDOM[4'h2][14];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_special_case_bits_inf_sign = _RANDOM[4'h2][15];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_small_add = _RANDOM[4'h2][16];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_far_path_mul_of = _RANDOM[4'h2][17];	// src/scala/EX2FP32.scala:25:25, :205:7
         s4Pipe_rBits_out_far_sig_a =
-          {_RANDOM[4'h2][31:18], _RANDOM[4'h3], _RANDOM[4'h4][1:0]};	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_far_sig_b = {_RANDOM[4'h4][31:2], _RANDOM[4'h5][21:0]};	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_far_exp_a_vec_0 = _RANDOM[4'h5][30:23];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_far_exp_a_vec_1 = {_RANDOM[4'h5][31], _RANDOM[4'h6][6:0]};	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_far_exp_a_vec_2 = _RANDOM[4'h6][14:7];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_near_path_sig_is_zero = _RANDOM[4'h6][15];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_near_path_lza_error = _RANDOM[4'h6][16];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_near_path_int_bit = _RANDOM[4'h6][17];	// src/scala/EXPFP32.scala:26:25, :206:7
+          {_RANDOM[4'h2][31:18], _RANDOM[4'h3], _RANDOM[4'h4][1:0]};	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_far_sig_b = {_RANDOM[4'h4][31:2], _RANDOM[4'h5][21:0]};	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_far_exp_a_vec_0 = _RANDOM[4'h5][30:23];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_far_exp_a_vec_1 = {_RANDOM[4'h5][31], _RANDOM[4'h6][6:0]};	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_far_exp_a_vec_2 = _RANDOM[4'h6][14:7];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_near_path_sig_is_zero = _RANDOM[4'h6][15];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_near_path_lza_error = _RANDOM[4'h6][16];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_near_path_int_bit = _RANDOM[4'h6][17];	// src/scala/EX2FP32.scala:25:25, :205:7
         s4Pipe_rBits_out_near_path_sig_raw =
-          {_RANDOM[4'h6][31:18], _RANDOM[4'h7], _RANDOM[4'h8][2:0]};	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_near_path_lzc = _RANDOM[4'h8][8:3];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_out_sel_far_path = _RANDOM[4'h8][9];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_index = _RANDOM[4'h8][17:10];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_ctrl_rm = _RANDOM[4'h8][20:18];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_ctrl_bypass = _RANDOM[4'h8][21];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h8][31:22], _RANDOM[4'h9][21:0]};	// src/scala/EXPFP32.scala:26:25, :206:7
-        s4Pipe_rBits_ctrl_yi = _RANDOM[4'h9][30:22];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s5Pipe_rValid = _RANDOM[4'h9][31];	// src/scala/EXPFP32.scala:25:29, :26:25, :206:7
-        s5Pipe_rBits_result = _RANDOM[4'hA];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s5Pipe_rBits_value = _RANDOM[4'hB];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s5Pipe_rBits_ctrl_rm = _RANDOM[4'hC][2:0];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s5Pipe_rBits_ctrl_bypass = _RANDOM[4'hC][3];	// src/scala/EXPFP32.scala:26:25, :206:7
-        s5Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'hC][31:4], _RANDOM[4'hD][3:0]};	// src/scala/EXPFP32.scala:26:25, :206:7
-        s5Pipe_rBits_ctrl_yi = _RANDOM[4'hD][12:4];	// src/scala/EXPFP32.scala:26:25, :206:7
+          {_RANDOM[4'h6][31:18], _RANDOM[4'h7], _RANDOM[4'h8][2:0]};	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_near_path_lzc = _RANDOM[4'h8][8:3];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_out_sel_far_path = _RANDOM[4'h8][9];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_index = _RANDOM[4'h8][17:10];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_ctrl_rm = _RANDOM[4'h8][20:18];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_ctrl_bypass = _RANDOM[4'h8][21];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h8][31:22], _RANDOM[4'h9][21:0]};	// src/scala/EX2FP32.scala:25:25, :205:7
+        s4Pipe_rBits_ctrl_yi = _RANDOM[4'h9][30:22];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s5Pipe_rValid = _RANDOM[4'h9][31];	// src/scala/EX2FP32.scala:24:29, :25:25, :205:7
+        s5Pipe_rBits_result = _RANDOM[4'hA];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s5Pipe_rBits_value = _RANDOM[4'hB];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s5Pipe_rBits_ctrl_rm = _RANDOM[4'hC][2:0];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s5Pipe_rBits_ctrl_bypass = _RANDOM[4'hC][3];	// src/scala/EX2FP32.scala:25:25, :205:7
+        s5Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'hC][31:4], _RANDOM[4'hD][3:0]};	// src/scala/EX2FP32.scala:25:25, :205:7
+        s5Pipe_rBits_ctrl_yi = _RANDOM[4'hD][12:4];	// src/scala/EX2FP32.scala:25:25, :205:7
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:206:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:206:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:205:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:205:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  MULFP32_2 mul (	// src/scala/EXPFP32.scala:234:21
+  MULFP32_1 mul (	// src/scala/EX2FP32.scala:233:21
     .clock                                  (clock),
     .reset                                  (reset),
     .io_in_ready                            (io_in_ready),
@@ -5997,7 +5745,7 @@ module CMAFP32LUTParallel(	// src/scala/EXPFP32.scala:206:7
     .io_in_bits_ctrl_topCtrl_bypass         (io_in_bits_ctrl_bypass),
     .io_in_bits_ctrl_topCtrl_bypassVal      (io_in_bits_ctrl_bypassVal),
     .io_in_bits_ctrl_topCtrl_yi             (io_in_bits_ctrl_yi),
-    .io_out_ready                           (s4_ready),	// src/scala/EXPFP32.scala:28:43
+    .io_out_ready                           (s4_ready),	// src/scala/EX2FP32.scala:27:43
     .io_out_valid                           (_mul_io_out_valid),
     .io_out_bits_toAdd_fp_prod_sign         (_mul_io_out_bits_toAdd_fp_prod_sign),
     .io_out_bits_toAdd_fp_prod_exp          (_mul_io_out_bits_toAdd_fp_prod_exp),
@@ -6012,16 +5760,16 @@ module CMAFP32LUTParallel(	// src/scala/EXPFP32.scala:206:7
     .io_out_bits_ctrl_topCtrl_bypassVal     (_mul_io_out_bits_ctrl_topCtrl_bypassVal),
     .io_out_bits_ctrl_topCtrl_yi            (_mul_io_out_bits_ctrl_topCtrl_yi)
   );
-  FCMA_ADD_s1 addS1 (	// src/scala/EXPFP32.scala:235:21
-    .io_a                              (56'h3F800000000000),	// src/scala/EXPFP32.scala:235:21
+  FCMA_ADD_s1 addS1 (	// src/scala/EX2FP32.scala:234:21
+    .io_a                              (56'h3F800000000000),	// src/scala/EX2FP32.scala:234:21
     .io_b
       ({_mul_io_out_bits_toAdd_fp_prod_sign,
         _mul_io_out_bits_toAdd_fp_prod_exp,
-        _mul_io_out_bits_toAdd_fp_prod_sig}),	// src/scala/EXPFP32.scala:234:21, :248:59
-    .io_b_inter_flags_isNaN            (_mul_io_out_bits_toAdd_inter_flags_isNaN),	// src/scala/EXPFP32.scala:234:21
-    .io_b_inter_flags_isInf            (_mul_io_out_bits_toAdd_inter_flags_isInf),	// src/scala/EXPFP32.scala:234:21
-    .io_b_inter_flags_overflow         (_mul_io_out_bits_toAdd_inter_flags_overflow),	// src/scala/EXPFP32.scala:234:21
-    .io_rm                             (_mul_io_out_bits_toAdd_rm),	// src/scala/EXPFP32.scala:234:21
+        _mul_io_out_bits_toAdd_fp_prod_sig}),	// src/scala/EX2FP32.scala:233:21, :247:59
+    .io_b_inter_flags_isNaN            (_mul_io_out_bits_toAdd_inter_flags_isNaN),	// src/scala/EX2FP32.scala:233:21
+    .io_b_inter_flags_isInf            (_mul_io_out_bits_toAdd_inter_flags_isInf),	// src/scala/EX2FP32.scala:233:21
+    .io_b_inter_flags_overflow         (_mul_io_out_bits_toAdd_inter_flags_overflow),	// src/scala/EX2FP32.scala:233:21
+    .io_rm                             (_mul_io_out_bits_toAdd_rm),	// src/scala/EX2FP32.scala:233:21
     .io_out_rm                         (_addS1_io_out_rm),
     .io_out_far_path_out_sign          (_addS1_io_out_far_path_out_sign),
     .io_out_near_path_out_sign         (_addS1_io_out_near_path_out_sign),
@@ -6043,228 +5791,228 @@ module CMAFP32LUTParallel(	// src/scala/EXPFP32.scala:206:7
     .io_out_near_path_lzc              (_addS1_io_out_near_path_lzc),
     .io_out_sel_far_path               (_addS1_io_out_sel_far_path)
   );
-  FCMA_ADD_s2 addS2 (	// src/scala/EXPFP32.scala:236:21
-    .io_in_rm                         (s4Pipe_rBits_out_rm),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_path_out_sign          (s4Pipe_rBits_out_far_path_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_out_sign         (s4Pipe_rBits_out_near_path_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_out_exp          (s4Pipe_rBits_out_near_path_out_exp),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_valid         (s4Pipe_rBits_out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan      (s4Pipe_rBits_out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf_sign (s4Pipe_rBits_out_special_case_bits_inf_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_small_add                  (s4Pipe_rBits_out_small_add),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_path_mul_of            (s4Pipe_rBits_out_far_path_mul_of),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_sig_a                  (s4Pipe_rBits_out_far_sig_a),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_sig_b                  (s4Pipe_rBits_out_far_sig_b),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_exp_a_vec_0            (s4Pipe_rBits_out_far_exp_a_vec_0),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_exp_a_vec_1            (s4Pipe_rBits_out_far_exp_a_vec_1),	// src/scala/EXPFP32.scala:26:25
-    .io_in_far_exp_a_vec_2            (s4Pipe_rBits_out_far_exp_a_vec_2),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_sig_is_zero      (s4Pipe_rBits_out_near_path_sig_is_zero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_lza_error        (s4Pipe_rBits_out_near_path_lza_error),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_int_bit          (s4Pipe_rBits_out_near_path_int_bit),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_sig_raw          (s4Pipe_rBits_out_near_path_sig_raw),	// src/scala/EXPFP32.scala:26:25
-    .io_in_near_path_lzc              (s4Pipe_rBits_out_near_path_lzc),	// src/scala/EXPFP32.scala:26:25
-    .io_in_sel_far_path               (s4Pipe_rBits_out_sel_far_path),	// src/scala/EXPFP32.scala:26:25
+  FCMA_ADD_s2 addS2 (	// src/scala/EX2FP32.scala:235:21
+    .io_in_rm                         (s4Pipe_rBits_out_rm),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_path_out_sign          (s4Pipe_rBits_out_far_path_out_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_out_sign         (s4Pipe_rBits_out_near_path_out_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_out_exp          (s4Pipe_rBits_out_near_path_out_exp),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_valid         (s4Pipe_rBits_out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan      (s4Pipe_rBits_out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf_sign (s4Pipe_rBits_out_special_case_bits_inf_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_small_add                  (s4Pipe_rBits_out_small_add),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_path_mul_of            (s4Pipe_rBits_out_far_path_mul_of),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_sig_a                  (s4Pipe_rBits_out_far_sig_a),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_sig_b                  (s4Pipe_rBits_out_far_sig_b),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_exp_a_vec_0            (s4Pipe_rBits_out_far_exp_a_vec_0),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_exp_a_vec_1            (s4Pipe_rBits_out_far_exp_a_vec_1),	// src/scala/EX2FP32.scala:25:25
+    .io_in_far_exp_a_vec_2            (s4Pipe_rBits_out_far_exp_a_vec_2),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_sig_is_zero      (s4Pipe_rBits_out_near_path_sig_is_zero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_lza_error        (s4Pipe_rBits_out_near_path_lza_error),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_int_bit          (s4Pipe_rBits_out_near_path_int_bit),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_sig_raw          (s4Pipe_rBits_out_near_path_sig_raw),	// src/scala/EX2FP32.scala:25:25
+    .io_in_near_path_lzc              (s4Pipe_rBits_out_near_path_lzc),	// src/scala/EX2FP32.scala:25:25
+    .io_in_sel_far_path               (s4Pipe_rBits_out_sel_far_path),	// src/scala/EX2FP32.scala:25:25
     .io_result                        (_addS2_io_result)
   );
-  assign io_out_valid = s5Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :206:7
-  assign io_out_bits_result = s5Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25, :206:7
-  assign io_out_bits_value = s5Pipe_rBits_value;	// src/scala/EXPFP32.scala:26:25, :206:7
-  assign io_out_bits_ctrl_rm = s5Pipe_rBits_ctrl_rm;	// src/scala/EXPFP32.scala:26:25, :206:7
-  assign io_out_bits_ctrl_bypass = s5Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25, :206:7
-  assign io_out_bits_ctrl_bypassVal = s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :206:7
-  assign io_out_bits_ctrl_yi = s5Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25, :206:7
+  assign io_out_valid = s5Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :205:7
+  assign io_out_bits_result = s5Pipe_rBits_result;	// src/scala/EX2FP32.scala:25:25, :205:7
+  assign io_out_bits_value = s5Pipe_rBits_value;	// src/scala/EX2FP32.scala:25:25, :205:7
+  assign io_out_bits_ctrl_rm = s5Pipe_rBits_ctrl_rm;	// src/scala/EX2FP32.scala:25:25, :205:7
+  assign io_out_bits_ctrl_bypass = s5Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25, :205:7
+  assign io_out_bits_ctrl_bypassVal = s5Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :205:7
+  assign io_out_bits_ctrl_yi = s5Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25, :205:7
 endmodule
 
-module MULFP32_3(	// src/scala/EXPFP32.scala:57:7
-  input         clock,	// src/scala/EXPFP32.scala:57:7
-                reset,	// src/scala/EXPFP32.scala:57:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_a,	// src/scala/EXPFP32.scala:73:14
-                io_in_bits_b,	// src/scala/EXPFP32.scala:73:14
-  input  [2:0]  io_in_bits_rm,	// src/scala/EXPFP32.scala:73:14
-  input         io_in_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:73:14
-  input  [8:0]  io_in_bits_ctrl_yi,	// src/scala/EXPFP32.scala:73:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:73:14
-  output [31:0] io_out_bits_result,	// src/scala/EXPFP32.scala:73:14
-  output        io_out_bits_ctrl_bypass,	// src/scala/EXPFP32.scala:73:14
-  output [31:0] io_out_bits_ctrl_bypassVal,	// src/scala/EXPFP32.scala:73:14
-  output [8:0]  io_out_bits_ctrl_yi	// src/scala/EXPFP32.scala:73:14
+module MULFP32_2(	// src/scala/EX2FP32.scala:56:7
+  input         clock,	// src/scala/EX2FP32.scala:56:7
+                reset,	// src/scala/EX2FP32.scala:56:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:72:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:72:14
+  input  [31:0] io_in_bits_a,	// src/scala/EX2FP32.scala:72:14
+                io_in_bits_b,	// src/scala/EX2FP32.scala:72:14
+  input  [2:0]  io_in_bits_rm,	// src/scala/EX2FP32.scala:72:14
+  input         io_in_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:72:14
+  input  [31:0] io_in_bits_ctrl_bypassVal,	// src/scala/EX2FP32.scala:72:14
+  input  [8:0]  io_in_bits_ctrl_yi,	// src/scala/EX2FP32.scala:72:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:72:14
+  output [31:0] io_out_bits_result,	// src/scala/EX2FP32.scala:72:14
+  output        io_out_bits_ctrl_bypass,	// src/scala/EX2FP32.scala:72:14
+  output [31:0] io_out_bits_ctrl_bypassVal,	// src/scala/EX2FP32.scala:72:14
+  output [8:0]  io_out_bits_ctrl_yi	// src/scala/EX2FP32.scala:72:14
 );
 
-  wire        s3_ready;	// src/scala/EXPFP32.scala:28:43
-  wire        s2_ready;	// src/scala/EXPFP32.scala:28:43
-  wire [31:0] _mulS3_io_result;	// src/scala/EXPFP32.scala:81:21
-  wire        _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:80:21
-  wire [8:0]  _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:80:21
-  wire [73:0] _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:80:21
-  wire [2:0]  _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:80:21
-  wire        _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:79:21
-  wire [8:0]  _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:79:21
-  wire        _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:79:21
-  wire [2:0]  _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:79:21
-  wire [49:0] _mul_io_result;	// src/scala/EXPFP32.scala:78:21
-  reg         s1Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s1Pipe_rBits_mulS1Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_prod_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_shift_amt;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_mulS1Out_exp_shifted;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_mulS1Out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s1Pipe_rBits_mulS1Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg  [49:0] s1Pipe_rBits_prod;	// src/scala/EXPFP32.scala:26:25
-  reg         s1Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s1Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-  wire        s1_ready = ~s1Pipe_rValid | s2_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s2Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg         s2Pipe_rBits_mulS2Out_special_case_valid;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s2Pipe_rBits_mulS2Out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25
-  reg  [73:0] s2Pipe_rBits_mulS2Out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_mulS2Out_early_overflow;	// src/scala/EXPFP32.scala:26:25
-  reg  [2:0]  s2Pipe_rBits_mulS2Out_rm;	// src/scala/EXPFP32.scala:26:25
-  reg         s2Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s2Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s2Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-  assign s2_ready = ~s2Pipe_rValid | s3_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  reg         s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [31:0] s3Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25
-  reg         s3Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-  reg  [31:0] s3Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-  reg  [8:0]  s3Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
-  assign s3_ready = ~s3Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43
-  wire        _s2Pipe_T = s2_ready & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  wire        _s3Pipe_T = s3_ready & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:57:7
-    if (reset) begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s2Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
-      s3Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EXPFP32.scala:25:29
+  wire        s3_ready;	// src/scala/EX2FP32.scala:27:43
+  wire        s2_ready;	// src/scala/EX2FP32.scala:27:43
+  wire [31:0] _mulS3_io_result;	// src/scala/EX2FP32.scala:80:21
+  wire        _mulS2_io_out_special_case_valid;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_raw_out_sign;	// src/scala/EX2FP32.scala:79:21
+  wire [8:0]  _mulS2_io_out_raw_out_exp;	// src/scala/EX2FP32.scala:79:21
+  wire [73:0] _mulS2_io_out_raw_out_sig;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS2_io_out_early_overflow;	// src/scala/EX2FP32.scala:79:21
+  wire [2:0]  _mulS2_io_out_rm;	// src/scala/EX2FP32.scala:79:21
+  wire        _mulS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_early_overflow;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_prod_sign;	// src/scala/EX2FP32.scala:78:21
+  wire [8:0]  _mulS1_io_out_shift_amt;	// src/scala/EX2FP32.scala:78:21
+  wire [8:0]  _mulS1_io_out_exp_shifted;	// src/scala/EX2FP32.scala:78:21
+  wire        _mulS1_io_out_may_be_subnormal;	// src/scala/EX2FP32.scala:78:21
+  wire [2:0]  _mulS1_io_out_rm;	// src/scala/EX2FP32.scala:78:21
+  wire [49:0] _mul_io_result;	// src/scala/EX2FP32.scala:77:21
+  reg         s1Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s1Pipe_rBits_mulS1Out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_early_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_prod_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_mulS1Out_shift_amt;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_mulS1Out_exp_shifted;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_mulS1Out_may_be_subnormal;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s1Pipe_rBits_mulS1Out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg  [49:0] s1Pipe_rBits_prod;	// src/scala/EX2FP32.scala:25:25
+  reg         s1Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s1Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+  wire        s1_ready = ~s1Pipe_rValid | s2_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg         s2Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg         s2Pipe_rBits_mulS2Out_special_case_valid;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_raw_out_sign;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s2Pipe_rBits_mulS2Out_raw_out_exp;	// src/scala/EX2FP32.scala:25:25
+  reg  [73:0] s2Pipe_rBits_mulS2Out_raw_out_sig;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_mulS2Out_early_overflow;	// src/scala/EX2FP32.scala:25:25
+  reg  [2:0]  s2Pipe_rBits_mulS2Out_rm;	// src/scala/EX2FP32.scala:25:25
+  reg         s2Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s2Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s2Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+  assign s2_ready = ~s2Pipe_rValid | s3_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  reg         s3Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [31:0] s3Pipe_rBits_result;	// src/scala/EX2FP32.scala:25:25
+  reg         s3Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+  reg  [31:0] s3Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+  reg  [8:0]  s3Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
+  assign s3_ready = ~s3Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  wire        _s1Pipe_T = s1_ready & io_in_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43
+  wire        _s2Pipe_T = s2_ready & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  wire        _s3Pipe_T = s3_ready & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:56:7
+    if (reset) begin	// src/scala/EX2FP32.scala:56:7
+      s1Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
+      s2Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
+      s3Pipe_rValid <= 1'h0;	// dependencies/fudian/src/main/scala/fudian/package.scala:83:29, src/scala/EX2FP32.scala:24:29
     end
-    else begin	// src/scala/EXPFP32.scala:57:7
-      s1Pipe_rValid <= _s1Pipe_T | ~(s2_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s2Pipe_rValid <= _s2Pipe_T | ~(s3_ready & s2Pipe_rValid) & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :28:43, :32:36, :34:18, :35:31, :36:18
-      s3Pipe_rValid <= _s3Pipe_T | ~(io_out_ready & s3Pipe_rValid) & s3Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
+    else begin	// src/scala/EX2FP32.scala:56:7
+      s1Pipe_rValid <= _s1Pipe_T | ~(s2_ready & s1Pipe_rValid) & s1Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s2Pipe_rValid <= _s2Pipe_T | ~(s3_ready & s2Pipe_rValid) & s2Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :27:43, :31:36, :33:18, :34:31, :35:18
+      s3Pipe_rValid <= _s3Pipe_T | ~(io_out_ready & s3Pipe_rValid) & s3Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
     end
     if (_s1Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s1Pipe_rBits_mulS1Out_special_case_valid <= _mulS1_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_nan <= _mulS1_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_special_case_bits_inf <= _mulS1_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :79:21
+      s1Pipe_rBits_mulS1Out_special_case_valid <= _mulS1_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_special_case_bits_nan <= _mulS1_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_special_case_bits_inf <= _mulS1_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25, :78:21
       s1Pipe_rBits_mulS1Out_special_case_bits_hasZero <=
-        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_early_overflow <= _mulS1_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_prod_sign <= _mulS1_io_out_prod_sign;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_shift_amt <= _mulS1_io_out_shift_amt;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_exp_shifted <= _mulS1_io_out_exp_shifted;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_may_be_subnormal <= _mulS1_io_out_may_be_subnormal;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_mulS1Out_rm <= _mulS1_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :79:21
-      s1Pipe_rBits_prod <= _mul_io_result;	// src/scala/EXPFP32.scala:26:25, :78:21
-      s1Pipe_rBits_ctrl_bypass <= io_in_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_bypassVal <= io_in_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s1Pipe_rBits_ctrl_yi <= io_in_bits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
+        _mulS1_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_early_overflow <= _mulS1_io_out_early_overflow;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_prod_sign <= _mulS1_io_out_prod_sign;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_shift_amt <= _mulS1_io_out_shift_amt;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_exp_shifted <= _mulS1_io_out_exp_shifted;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_may_be_subnormal <= _mulS1_io_out_may_be_subnormal;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_mulS1Out_rm <= _mulS1_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :78:21
+      s1Pipe_rBits_prod <= _mul_io_result;	// src/scala/EX2FP32.scala:25:25, :77:21
+      s1Pipe_rBits_ctrl_bypass <= io_in_bits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_bypassVal <= io_in_bits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s1Pipe_rBits_ctrl_yi <= io_in_bits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
     end
     if (_s2Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s2Pipe_rBits_mulS2Out_special_case_valid <= _mulS2_io_out_special_case_valid;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_nan <= _mulS2_io_out_special_case_bits_nan;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_special_case_bits_inf <= _mulS2_io_out_special_case_bits_inf;	// src/scala/EXPFP32.scala:26:25, :80:21
+      s2Pipe_rBits_mulS2Out_special_case_valid <= _mulS2_io_out_special_case_valid;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_special_case_bits_nan <= _mulS2_io_out_special_case_bits_nan;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_special_case_bits_inf <= _mulS2_io_out_special_case_bits_inf;	// src/scala/EX2FP32.scala:25:25, :79:21
       s2Pipe_rBits_mulS2Out_special_case_bits_hasZero <=
-        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sign <= _mulS2_io_out_raw_out_sign;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_exp <= _mulS2_io_out_raw_out_exp;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_raw_out_sig <= _mulS2_io_out_raw_out_sig;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_early_overflow <= _mulS2_io_out_early_overflow;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_mulS2Out_rm <= _mulS2_io_out_rm;	// src/scala/EXPFP32.scala:26:25, :80:21
-      s2Pipe_rBits_ctrl_bypass <= s1Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_bypassVal <= s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s2Pipe_rBits_ctrl_yi <= s1Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
+        _mulS2_io_out_special_case_bits_hasZero;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_sign <= _mulS2_io_out_raw_out_sign;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_exp <= _mulS2_io_out_raw_out_exp;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_raw_out_sig <= _mulS2_io_out_raw_out_sig;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_early_overflow <= _mulS2_io_out_early_overflow;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_mulS2Out_rm <= _mulS2_io_out_rm;	// src/scala/EX2FP32.scala:25:25, :79:21
+      s2Pipe_rBits_ctrl_bypass <= s1Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_bypassVal <= s1Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s2Pipe_rBits_ctrl_yi <= s1Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
     end
     if (_s3Pipe_T) begin	// src/main/scala/chisel3/util/Decoupled.scala:51:35
-      s3Pipe_rBits_result <= _mulS3_io_result;	// src/scala/EXPFP32.scala:26:25, :81:21
-      s3Pipe_rBits_ctrl_bypass <= s2Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_bypassVal <= s2Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25
-      s3Pipe_rBits_ctrl_yi <= s2Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25
+      s3Pipe_rBits_result <= _mulS3_io_result;	// src/scala/EX2FP32.scala:25:25, :80:21
+      s3Pipe_rBits_ctrl_bypass <= s2Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_bypassVal <= s2Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25
+      s3Pipe_rBits_ctrl_yi <= s2Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25
     end
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:57:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:57:7
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:56:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:56:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:56:7
     `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:12];	// src/scala/EXPFP32.scala:57:7
-    initial begin	// src/scala/EXPFP32.scala:57:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:57:7
+    logic [31:0] _RANDOM[0:12];	// src/scala/EX2FP32.scala:56:7
+    initial begin	// src/scala/EX2FP32.scala:56:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:56:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:56:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:57:7
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:56:7
         for (logic [3:0] i = 4'h0; i < 4'hD; i += 4'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/scala/EXPFP32.scala:57:7
-        end	// src/scala/EXPFP32.scala:57:7
-        s1Pipe_rValid = _RANDOM[4'h0][0];	// src/scala/EXPFP32.scala:25:29, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_valid = _RANDOM[4'h0][1];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_nan = _RANDOM[4'h0][2];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_inf = _RANDOM[4'h0][3];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_special_case_bits_hasZero = _RANDOM[4'h0][5];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_early_overflow = _RANDOM[4'h0][6];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_prod_sign = _RANDOM[4'h0][7];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_shift_amt = _RANDOM[4'h0][16:8];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_exp_shifted = _RANDOM[4'h0][25:17];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_may_be_subnormal = _RANDOM[4'h0][26];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_mulS1Out_rm = _RANDOM[4'h0][29:27];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_prod = {_RANDOM[4'h0][31:30], _RANDOM[4'h1], _RANDOM[4'h2][15:0]};	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s1Pipe_rBits_ctrl_bypass = _RANDOM[4'h2][16];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h2][31:17], _RANDOM[4'h3][16:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s1Pipe_rBits_ctrl_yi = _RANDOM[4'h3][25:17];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rValid = _RANDOM[4'h3][26];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_valid = _RANDOM[4'h3][27];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_nan = _RANDOM[4'h3][28];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_inf = _RANDOM[4'h3][29];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_special_case_bits_hasZero = _RANDOM[4'h3][31];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_sign = _RANDOM[4'h4][0];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_raw_out_exp = _RANDOM[4'h4][9:1];	// src/scala/EXPFP32.scala:26:25, :57:7
+          _RANDOM[i] = `RANDOM;	// src/scala/EX2FP32.scala:56:7
+        end	// src/scala/EX2FP32.scala:56:7
+        s1Pipe_rValid = _RANDOM[4'h0][0];	// src/scala/EX2FP32.scala:24:29, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_valid = _RANDOM[4'h0][1];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_nan = _RANDOM[4'h0][2];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_inf = _RANDOM[4'h0][3];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_special_case_bits_hasZero = _RANDOM[4'h0][5];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_early_overflow = _RANDOM[4'h0][6];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_prod_sign = _RANDOM[4'h0][7];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_shift_amt = _RANDOM[4'h0][16:8];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_exp_shifted = _RANDOM[4'h0][25:17];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_may_be_subnormal = _RANDOM[4'h0][26];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_mulS1Out_rm = _RANDOM[4'h0][29:27];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_prod = {_RANDOM[4'h0][31:30], _RANDOM[4'h1], _RANDOM[4'h2][15:0]};	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s1Pipe_rBits_ctrl_bypass = _RANDOM[4'h2][16];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h2][31:17], _RANDOM[4'h3][16:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s1Pipe_rBits_ctrl_yi = _RANDOM[4'h3][25:17];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rValid = _RANDOM[4'h3][26];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_valid = _RANDOM[4'h3][27];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_nan = _RANDOM[4'h3][28];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_inf = _RANDOM[4'h3][29];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_special_case_bits_hasZero = _RANDOM[4'h3][31];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_raw_out_sign = _RANDOM[4'h4][0];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_raw_out_exp = _RANDOM[4'h4][9:1];	// src/scala/EX2FP32.scala:25:25, :56:7
         s2Pipe_rBits_mulS2Out_raw_out_sig =
-          {_RANDOM[4'h4][31:10], _RANDOM[4'h5], _RANDOM[4'h6][19:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_early_overflow = _RANDOM[4'h6][20];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_mulS2Out_rm = _RANDOM[4'h6][23:21];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_bypass = _RANDOM[4'h6][24];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h6][31:25], _RANDOM[4'h7][24:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s2Pipe_rBits_ctrl_yi = {_RANDOM[4'h7][31:25], _RANDOM[4'h8][1:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rValid = _RANDOM[4'h8][2];	// src/scala/EXPFP32.scala:25:29, :26:25, :57:7
-        s3Pipe_rBits_result = {_RANDOM[4'h8][31:3], _RANDOM[4'h9][2:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_bypass = _RANDOM[4'hB][2];	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'hB][31:3], _RANDOM[4'hC][2:0]};	// src/scala/EXPFP32.scala:26:25, :57:7
-        s3Pipe_rBits_ctrl_yi = _RANDOM[4'hC][11:3];	// src/scala/EXPFP32.scala:26:25, :57:7
+          {_RANDOM[4'h4][31:10], _RANDOM[4'h5], _RANDOM[4'h6][19:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_early_overflow = _RANDOM[4'h6][20];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_mulS2Out_rm = _RANDOM[4'h6][23:21];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_bypass = _RANDOM[4'h6][24];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'h6][31:25], _RANDOM[4'h7][24:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s2Pipe_rBits_ctrl_yi = {_RANDOM[4'h7][31:25], _RANDOM[4'h8][1:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rValid = _RANDOM[4'h8][2];	// src/scala/EX2FP32.scala:24:29, :25:25, :56:7
+        s3Pipe_rBits_result = {_RANDOM[4'h8][31:3], _RANDOM[4'h9][2:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_bypass = _RANDOM[4'hB][2];	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_bypassVal = {_RANDOM[4'hB][31:3], _RANDOM[4'hC][2:0]};	// src/scala/EX2FP32.scala:25:25, :56:7
+        s3Pipe_rBits_ctrl_yi = _RANDOM[4'hC][11:3];	// src/scala/EX2FP32.scala:25:25, :56:7
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:57:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:56:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:56:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  Multiplier mul (	// src/scala/EXPFP32.scala:78:21
-    .io_a      ({1'h0, |(io_in_bits_a[30:23]), io_in_bits_a[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EXPFP32.scala:89:12
-    .io_b      ({1'h0, |(io_in_bits_b[30:23]), io_in_bits_b[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EXPFP32.scala:90:12
+  Multiplier mul (	// src/scala/EX2FP32.scala:77:21
+    .io_a      ({1'h0, |(io_in_bits_a[30:23]), io_in_bits_a[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EX2FP32.scala:88:12
+    .io_b      ({1'h0, |(io_in_bits_b[30:23]), io_in_bits_b[22:0]}),	// dependencies/fudian/src/main/scala/fudian/package.scala:60:18, :61:18, :81:69, :83:29, src/scala/EX2FP32.scala:89:12
     .io_result (_mul_io_result)
   );
-  FMUL_s1 mulS1 (	// src/scala/EXPFP32.scala:79:21
+  FMUL_s1 mulS1 (	// src/scala/EX2FP32.scala:78:21
     .io_a                             (io_in_bits_a),
     .io_b                             (io_in_bits_b),
     .io_rm                            (io_in_bits_rm),
@@ -6279,18 +6027,18 @@ module MULFP32_3(	// src/scala/EXPFP32.scala:57:7
     .io_out_may_be_subnormal          (_mulS1_io_out_may_be_subnormal),
     .io_out_rm                        (_mulS1_io_out_rm)
   );
-  FMUL_s2 mulS2 (	// src/scala/EXPFP32.scala:80:21
-    .io_in_special_case_valid         (s1Pipe_rBits_mulS1Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan      (s1Pipe_rBits_mulS1Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf      (s1Pipe_rBits_mulS1Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero  (s1Pipe_rBits_mulS1Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow             (s1Pipe_rBits_mulS1Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_prod_sign                  (s1Pipe_rBits_mulS1Out_prod_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_shift_amt                  (s1Pipe_rBits_mulS1Out_shift_amt),	// src/scala/EXPFP32.scala:26:25
-    .io_in_exp_shifted                (s1Pipe_rBits_mulS1Out_exp_shifted),	// src/scala/EXPFP32.scala:26:25
-    .io_in_may_be_subnormal           (s1Pipe_rBits_mulS1Out_may_be_subnormal),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                         (s1Pipe_rBits_mulS1Out_rm),	// src/scala/EXPFP32.scala:26:25
-    .io_prod                          (s1Pipe_rBits_prod[47:0]),	// src/scala/EXPFP32.scala:26:25, :106:17
+  FMUL_s2 mulS2 (	// src/scala/EX2FP32.scala:79:21
+    .io_in_special_case_valid         (s1Pipe_rBits_mulS1Out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan      (s1Pipe_rBits_mulS1Out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf      (s1Pipe_rBits_mulS1Out_special_case_bits_inf),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_hasZero  (s1Pipe_rBits_mulS1Out_special_case_bits_hasZero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_early_overflow             (s1Pipe_rBits_mulS1Out_early_overflow),	// src/scala/EX2FP32.scala:25:25
+    .io_in_prod_sign                  (s1Pipe_rBits_mulS1Out_prod_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_shift_amt                  (s1Pipe_rBits_mulS1Out_shift_amt),	// src/scala/EX2FP32.scala:25:25
+    .io_in_exp_shifted                (s1Pipe_rBits_mulS1Out_exp_shifted),	// src/scala/EX2FP32.scala:25:25
+    .io_in_may_be_subnormal           (s1Pipe_rBits_mulS1Out_may_be_subnormal),	// src/scala/EX2FP32.scala:25:25
+    .io_in_rm                         (s1Pipe_rBits_mulS1Out_rm),	// src/scala/EX2FP32.scala:25:25
+    .io_prod                          (s1Pipe_rBits_prod[47:0]),	// src/scala/EX2FP32.scala:25:25, :105:17
     .io_out_special_case_valid        (_mulS2_io_out_special_case_valid),
     .io_out_special_case_bits_nan     (_mulS2_io_out_special_case_bits_nan),
     .io_out_special_case_bits_inf     (_mulS2_io_out_special_case_bits_inf),
@@ -6301,16 +6049,16 @@ module MULFP32_3(	// src/scala/EXPFP32.scala:57:7
     .io_out_early_overflow            (_mulS2_io_out_early_overflow),
     .io_out_rm                        (_mulS2_io_out_rm)
   );
-  FMUL_s3 mulS3 (	// src/scala/EXPFP32.scala:81:21
-    .io_in_special_case_valid        (s2Pipe_rBits_mulS2Out_special_case_valid),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_nan     (s2Pipe_rBits_mulS2Out_special_case_bits_nan),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_inf     (s2Pipe_rBits_mulS2Out_special_case_bits_inf),	// src/scala/EXPFP32.scala:26:25
-    .io_in_special_case_bits_hasZero (s2Pipe_rBits_mulS2Out_special_case_bits_hasZero),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sign              (s2Pipe_rBits_mulS2Out_raw_out_sign),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_exp               (s2Pipe_rBits_mulS2Out_raw_out_exp),	// src/scala/EXPFP32.scala:26:25
-    .io_in_raw_out_sig               (s2Pipe_rBits_mulS2Out_raw_out_sig),	// src/scala/EXPFP32.scala:26:25
-    .io_in_early_overflow            (s2Pipe_rBits_mulS2Out_early_overflow),	// src/scala/EXPFP32.scala:26:25
-    .io_in_rm                        (s2Pipe_rBits_mulS2Out_rm),	// src/scala/EXPFP32.scala:26:25
+  FMUL_s3 mulS3 (	// src/scala/EX2FP32.scala:80:21
+    .io_in_special_case_valid        (s2Pipe_rBits_mulS2Out_special_case_valid),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_nan     (s2Pipe_rBits_mulS2Out_special_case_bits_nan),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_inf     (s2Pipe_rBits_mulS2Out_special_case_bits_inf),	// src/scala/EX2FP32.scala:25:25
+    .io_in_special_case_bits_hasZero (s2Pipe_rBits_mulS2Out_special_case_bits_hasZero),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_sign              (s2Pipe_rBits_mulS2Out_raw_out_sign),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_exp               (s2Pipe_rBits_mulS2Out_raw_out_exp),	// src/scala/EX2FP32.scala:25:25
+    .io_in_raw_out_sig               (s2Pipe_rBits_mulS2Out_raw_out_sig),	// src/scala/EX2FP32.scala:25:25
+    .io_in_early_overflow            (s2Pipe_rBits_mulS2Out_early_overflow),	// src/scala/EX2FP32.scala:25:25
+    .io_in_rm                        (s2Pipe_rBits_mulS2Out_rm),	// src/scala/EX2FP32.scala:25:25
     .io_result                       (_mulS3_io_result),
     .io_to_fadd_fp_prod_sign         (/* unused */),
     .io_to_fadd_fp_prod_exp          (/* unused */),
@@ -6320,77 +6068,71 @@ module MULFP32_3(	// src/scala/EXPFP32.scala:57:7
     .io_to_fadd_inter_flags_overflow (/* unused */),
     .io_to_fadd_rm                   (/* unused */)
   );
-  assign io_in_ready = s1_ready;	// src/scala/EXPFP32.scala:28:43, :57:7
-  assign io_out_valid = s3Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :57:7
-  assign io_out_bits_result = s3Pipe_rBits_result;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_bypass = s3Pipe_rBits_ctrl_bypass;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_bypassVal = s3Pipe_rBits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:26:25, :57:7
-  assign io_out_bits_ctrl_yi = s3Pipe_rBits_ctrl_yi;	// src/scala/EXPFP32.scala:26:25, :57:7
+  assign io_in_ready = s1_ready;	// src/scala/EX2FP32.scala:27:43, :56:7
+  assign io_out_valid = s3Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :56:7
+  assign io_out_bits_result = s3Pipe_rBits_result;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_bypass = s3Pipe_rBits_ctrl_bypass;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_bypassVal = s3Pipe_rBits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:25:25, :56:7
+  assign io_out_bits_ctrl_yi = s3Pipe_rBits_ctrl_yi;	// src/scala/EX2FP32.scala:25:25, :56:7
 endmodule
 
-module EXPFP32(	// src/scala/EXPFP32.scala:407:7
-  input         clock,	// src/scala/EXPFP32.scala:407:7
-                reset,	// src/scala/EXPFP32.scala:407:7
-  output        io_in_ready,	// src/scala/EXPFP32.scala:415:14
-  input         io_in_valid,	// src/scala/EXPFP32.scala:415:14
-  input  [31:0] io_in_bits_in,	// src/scala/EXPFP32.scala:415:14
-  input  [2:0]  io_in_bits_rm,	// src/scala/EXPFP32.scala:415:14
-  input         io_out_ready,	// src/scala/EXPFP32.scala:415:14
-  output        io_out_valid,	// src/scala/EXPFP32.scala:415:14
-  output [31:0] io_out_bits_out	// src/scala/EXPFP32.scala:415:14
+module EX2FP32(	// src/scala/EX2FP32.scala:406:7
+  input         clock,	// src/scala/EX2FP32.scala:406:7
+                reset,	// src/scala/EX2FP32.scala:406:7
+  output        io_in_ready,	// src/scala/EX2FP32.scala:414:14
+  input         io_in_valid,	// src/scala/EX2FP32.scala:414:14
+  input  [31:0] io_in_bits_in,	// src/scala/EX2FP32.scala:414:14
+  input  [2:0]  io_in_bits_rm,	// src/scala/EX2FP32.scala:414:14
+  input         io_out_ready,	// src/scala/EX2FP32.scala:414:14
+  output        io_out_valid,	// src/scala/EX2FP32.scala:414:14
+  output [31:0] io_out_bits_out	// src/scala/EX2FP32.scala:414:14
 );
 
-  wire        _mul1_io_in_ready;	// src/scala/EXPFP32.scala:503:20
-  wire        _mul1_io_out_valid;	// src/scala/EXPFP32.scala:503:20
-  wire [31:0] _mul1_io_out_bits_result;	// src/scala/EXPFP32.scala:503:20
-  wire        _mul1_io_out_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:503:20
-  wire [31:0] _mul1_io_out_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:503:20
-  wire [8:0]  _mul1_io_out_bits_ctrl_yi;	// src/scala/EXPFP32.scala:503:20
-  wire        _cma1_io_in_ready;	// src/scala/EXPFP32.scala:485:20
-  wire        _cma1_io_out_valid;	// src/scala/EXPFP32.scala:485:20
-  wire [31:0] _cma1_io_out_bits_result;	// src/scala/EXPFP32.scala:485:20
-  wire [31:0] _cma1_io_out_bits_value;	// src/scala/EXPFP32.scala:485:20
-  wire [2:0]  _cma1_io_out_bits_ctrl_rm;	// src/scala/EXPFP32.scala:485:20
-  wire        _cma1_io_out_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:485:20
-  wire [31:0] _cma1_io_out_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:485:20
-  wire [8:0]  _cma1_io_out_bits_ctrl_yi;	// src/scala/EXPFP32.scala:485:20
-  wire        _cma0_io_in_ready;	// src/scala/EXPFP32.scala:465:22
-  wire        _cma0_io_out_valid;	// src/scala/EXPFP32.scala:465:22
-  wire [31:0] _cma0_io_out_bits_result;	// src/scala/EXPFP32.scala:465:22
-  wire [2:0]  _cma0_io_out_bits_ctrl_rm;	// src/scala/EXPFP32.scala:465:22
-  wire        _cma0_io_out_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:465:22
-  wire [31:0] _cma0_io_out_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:465:22
-  wire [8:0]  _cma0_io_out_bits_ctrl_yi;	// src/scala/EXPFP32.scala:465:22
-  wire [7:0]  _cma0_io_out_bits_ctrl_yfi;	// src/scala/EXPFP32.scala:465:22
-  wire [31:0] _cma0_io_out_bits_ctrl_yfj;	// src/scala/EXPFP32.scala:465:22
-  wire        _decompose_io_in_ready;	// src/scala/EXPFP32.scala:449:25
-  wire        _decompose_io_out_valid;	// src/scala/EXPFP32.scala:449:25
-  wire [8:0]  _decompose_io_out_bits_yi;	// src/scala/EXPFP32.scala:449:25
-  wire [7:0]  _decompose_io_out_bits_yfi;	// src/scala/EXPFP32.scala:449:25
-  wire [31:0] _decompose_io_out_bits_yfj;	// src/scala/EXPFP32.scala:449:25
-  wire [2:0]  _decompose_io_out_bits_ctrl_rm;	// src/scala/EXPFP32.scala:449:25
-  wire        _decompose_io_out_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:449:25
-  wire [31:0] _decompose_io_out_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:449:25
-  wire        _mul0_io_in_ready;	// src/scala/EXPFP32.scala:434:20
-  wire        _mul0_io_out_valid;	// src/scala/EXPFP32.scala:434:20
-  wire [31:0] _mul0_io_out_bits_result;	// src/scala/EXPFP32.scala:434:20
-  wire [2:0]  _mul0_io_out_bits_ctrl_rm;	// src/scala/EXPFP32.scala:434:20
-  wire        _mul0_io_out_bits_ctrl_bypass;	// src/scala/EXPFP32.scala:434:20
-  wire [31:0] _mul0_io_out_bits_ctrl_bypassVal;	// src/scala/EXPFP32.scala:434:20
-  wire        _filter_io_out_valid;	// src/scala/EXPFP32.scala:423:22
-  wire [31:0] _filter_io_out_bits_out;	// src/scala/EXPFP32.scala:423:22
-  wire        _filter_io_out_bits_bypass;	// src/scala/EXPFP32.scala:423:22
-  wire [31:0] _filter_io_out_bits_bypassVal;	// src/scala/EXPFP32.scala:423:22
-  wire [2:0]  _filter_io_out_bits_ctrl_rm;	// src/scala/EXPFP32.scala:423:22
-  reg         s18Pipe_rValid;	// src/scala/EXPFP32.scala:25:29
-  reg  [31:0] s18Pipe_rBits_out;	// src/scala/EXPFP32.scala:26:25
-  wire        s18_ready = ~s18Pipe_rValid | io_out_ready;	// src/scala/EXPFP32.scala:25:29, :28:{35,43}
-  wire        _s18Pipe_T = s18_ready & _mul1_io_out_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:28:43, :503:20
-  always @(posedge clock) begin	// src/scala/EXPFP32.scala:407:7
-    if (reset)	// src/scala/EXPFP32.scala:407:7
-      s18Pipe_rValid <= 1'h0;	// src/scala/EXPFP32.scala:25:29, :407:7
-    else	// src/scala/EXPFP32.scala:407:7
-      s18Pipe_rValid <= _s18Pipe_T | ~(io_out_ready & s18Pipe_rValid) & s18Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EXPFP32.scala:25:29, :32:36, :34:18, :35:31, :36:18
+  wire        _mul1_io_in_ready;	// src/scala/EX2FP32.scala:502:20
+  wire        _mul1_io_out_valid;	// src/scala/EX2FP32.scala:502:20
+  wire [31:0] _mul1_io_out_bits_result;	// src/scala/EX2FP32.scala:502:20
+  wire        _mul1_io_out_bits_ctrl_bypass;	// src/scala/EX2FP32.scala:502:20
+  wire [31:0] _mul1_io_out_bits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:502:20
+  wire [8:0]  _mul1_io_out_bits_ctrl_yi;	// src/scala/EX2FP32.scala:502:20
+  wire        _cma1_io_in_ready;	// src/scala/EX2FP32.scala:484:20
+  wire        _cma1_io_out_valid;	// src/scala/EX2FP32.scala:484:20
+  wire [31:0] _cma1_io_out_bits_result;	// src/scala/EX2FP32.scala:484:20
+  wire [31:0] _cma1_io_out_bits_value;	// src/scala/EX2FP32.scala:484:20
+  wire [2:0]  _cma1_io_out_bits_ctrl_rm;	// src/scala/EX2FP32.scala:484:20
+  wire        _cma1_io_out_bits_ctrl_bypass;	// src/scala/EX2FP32.scala:484:20
+  wire [31:0] _cma1_io_out_bits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:484:20
+  wire [8:0]  _cma1_io_out_bits_ctrl_yi;	// src/scala/EX2FP32.scala:484:20
+  wire        _cma0_io_in_ready;	// src/scala/EX2FP32.scala:464:22
+  wire        _cma0_io_out_valid;	// src/scala/EX2FP32.scala:464:22
+  wire [31:0] _cma0_io_out_bits_result;	// src/scala/EX2FP32.scala:464:22
+  wire [2:0]  _cma0_io_out_bits_ctrl_rm;	// src/scala/EX2FP32.scala:464:22
+  wire        _cma0_io_out_bits_ctrl_bypass;	// src/scala/EX2FP32.scala:464:22
+  wire [31:0] _cma0_io_out_bits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:464:22
+  wire [8:0]  _cma0_io_out_bits_ctrl_yi;	// src/scala/EX2FP32.scala:464:22
+  wire [7:0]  _cma0_io_out_bits_ctrl_yfi;	// src/scala/EX2FP32.scala:464:22
+  wire [31:0] _cma0_io_out_bits_ctrl_yfj;	// src/scala/EX2FP32.scala:464:22
+  wire        _decompose_io_in_ready;	// src/scala/EX2FP32.scala:448:25
+  wire        _decompose_io_out_valid;	// src/scala/EX2FP32.scala:448:25
+  wire [8:0]  _decompose_io_out_bits_yi;	// src/scala/EX2FP32.scala:448:25
+  wire [7:0]  _decompose_io_out_bits_yfi;	// src/scala/EX2FP32.scala:448:25
+  wire [31:0] _decompose_io_out_bits_yfj;	// src/scala/EX2FP32.scala:448:25
+  wire [2:0]  _decompose_io_out_bits_ctrl_rm;	// src/scala/EX2FP32.scala:448:25
+  wire        _decompose_io_out_bits_ctrl_bypass;	// src/scala/EX2FP32.scala:448:25
+  wire [31:0] _decompose_io_out_bits_ctrl_bypassVal;	// src/scala/EX2FP32.scala:448:25
+  wire        _filter_io_out_valid;	// src/scala/EX2FP32.scala:422:22
+  wire [31:0] _filter_io_out_bits_out;	// src/scala/EX2FP32.scala:422:22
+  wire        _filter_io_out_bits_bypass;	// src/scala/EX2FP32.scala:422:22
+  wire [31:0] _filter_io_out_bits_bypassVal;	// src/scala/EX2FP32.scala:422:22
+  wire [2:0]  _filter_io_out_bits_ctrl_rm;	// src/scala/EX2FP32.scala:422:22
+  reg         s18Pipe_rValid;	// src/scala/EX2FP32.scala:24:29
+  reg  [31:0] s18Pipe_rBits_out;	// src/scala/EX2FP32.scala:25:25
+  wire        s18_ready = ~s18Pipe_rValid | io_out_ready;	// src/scala/EX2FP32.scala:24:29, :27:{35,43}
+  wire        _s18Pipe_T = s18_ready & _mul1_io_out_valid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:27:43, :502:20
+  always @(posedge clock) begin	// src/scala/EX2FP32.scala:406:7
+    if (reset)	// src/scala/EX2FP32.scala:406:7
+      s18Pipe_rValid <= 1'h0;	// src/scala/EX2FP32.scala:24:29, :406:7
+    else	// src/scala/EX2FP32.scala:406:7
+      s18Pipe_rValid <= _s18Pipe_T | ~(io_out_ready & s18Pipe_rValid) & s18Pipe_rValid;	// src/main/scala/chisel3/util/Decoupled.scala:51:35, src/scala/EX2FP32.scala:24:29, :31:36, :33:18, :34:31, :35:18
     if (_s18Pipe_T)	// src/main/scala/chisel3/util/Decoupled.scala:51:35
       s18Pipe_rBits_out <=
         _mul1_io_out_bits_ctrl_bypass
@@ -6400,70 +6142,53 @@ module EXPFP32(	// src/scala/EXPFP32.scala:407:7
                + (_mul1_io_out_bits_ctrl_yi[8]
                     ? 8'h0 - _mul1_io_out_bits_ctrl_yi[7:0]
                     : _mul1_io_out_bits_ctrl_yi[7:0]),
-             _mul1_io_out_bits_result[22:0]};	// src/scala/EXPFP32.scala:26:25, :407:7, :503:20, :517:26, :518:26, :519:21, :520:21, :521:{35,40,55}, :522:22, :523:22
+             _mul1_io_out_bits_result[22:0]};	// src/scala/EX2FP32.scala:25:25, :406:7, :502:20, :516:26, :517:26, :518:21, :519:21, :520:{35,40,55}, :521:22, :522:22
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/scala/EXPFP32.scala:407:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:407:7
-      `FIRRTL_BEFORE_INITIAL	// src/scala/EXPFP32.scala:407:7
+  `ifdef ENABLE_INITIAL_REG_	// src/scala/EX2FP32.scala:406:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:406:7
+      `FIRRTL_BEFORE_INITIAL	// src/scala/EX2FP32.scala:406:7
     `endif // FIRRTL_BEFORE_INITIAL
-    logic [31:0] _RANDOM[0:1];	// src/scala/EXPFP32.scala:407:7
-    initial begin	// src/scala/EXPFP32.scala:407:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:407:7
-        `INIT_RANDOM_PROLOG_	// src/scala/EXPFP32.scala:407:7
+    logic [31:0] _RANDOM[0:1];	// src/scala/EX2FP32.scala:406:7
+    initial begin	// src/scala/EX2FP32.scala:406:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:406:7
+        `INIT_RANDOM_PROLOG_	// src/scala/EX2FP32.scala:406:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/scala/EXPFP32.scala:407:7
+      `ifdef RANDOMIZE_REG_INIT	// src/scala/EX2FP32.scala:406:7
         for (logic [1:0] i = 2'h0; i < 2'h2; i += 2'h1) begin
-          _RANDOM[i[0]] = `RANDOM;	// src/scala/EXPFP32.scala:407:7
-        end	// src/scala/EXPFP32.scala:407:7
-        s18Pipe_rValid = _RANDOM[1'h0][0];	// src/scala/EXPFP32.scala:25:29, :407:7
-        s18Pipe_rBits_out = {_RANDOM[1'h0][31:1], _RANDOM[1'h1][0]};	// src/scala/EXPFP32.scala:25:29, :26:25, :407:7
+          _RANDOM[i[0]] = `RANDOM;	// src/scala/EX2FP32.scala:406:7
+        end	// src/scala/EX2FP32.scala:406:7
+        s18Pipe_rValid = _RANDOM[1'h0][0];	// src/scala/EX2FP32.scala:24:29, :406:7
+        s18Pipe_rBits_out = {_RANDOM[1'h0][31:1], _RANDOM[1'h1][0]};	// src/scala/EX2FP32.scala:24:29, :25:25, :406:7
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:407:7
-      `FIRRTL_AFTER_INITIAL	// src/scala/EXPFP32.scala:407:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:406:7
+      `FIRRTL_AFTER_INITIAL	// src/scala/EX2FP32.scala:406:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  FilterFP32 filter (	// src/scala/EXPFP32.scala:423:22
+  FilterFP32 filter (	// src/scala/EX2FP32.scala:422:22
     .clock                 (clock),
     .reset                 (reset),
     .io_in_ready           (io_in_ready),
     .io_in_valid           (io_in_valid),
     .io_in_bits_in         (io_in_bits_in),
     .io_in_bits_ctrl_rm    (io_in_bits_rm),
-    .io_out_ready          (_mul0_io_in_ready),	// src/scala/EXPFP32.scala:434:20
+    .io_out_ready          (_decompose_io_in_ready),	// src/scala/EX2FP32.scala:448:25
     .io_out_valid          (_filter_io_out_valid),
     .io_out_bits_out       (_filter_io_out_bits_out),
     .io_out_bits_bypass    (_filter_io_out_bits_bypass),
     .io_out_bits_bypassVal (_filter_io_out_bits_bypassVal),
     .io_out_bits_ctrl_rm   (_filter_io_out_bits_ctrl_rm)
   );
-  MULFP32 mul0 (	// src/scala/EXPFP32.scala:434:20
-    .clock                      (clock),
-    .reset                      (reset),
-    .io_in_ready                (_mul0_io_in_ready),
-    .io_in_valid                (_filter_io_out_valid),	// src/scala/EXPFP32.scala:423:22
-    .io_in_bits_a               (_filter_io_out_bits_out),	// src/scala/EXPFP32.scala:423:22
-    .io_in_bits_rm              (_filter_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:423:22
-    .io_in_bits_ctrl_rm         (_filter_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:423:22
-    .io_in_bits_ctrl_bypass     (_filter_io_out_bits_bypass),	// src/scala/EXPFP32.scala:423:22
-    .io_in_bits_ctrl_bypassVal  (_filter_io_out_bits_bypassVal),	// src/scala/EXPFP32.scala:423:22
-    .io_out_ready               (_decompose_io_in_ready),	// src/scala/EXPFP32.scala:449:25
-    .io_out_valid               (_mul0_io_out_valid),
-    .io_out_bits_result         (_mul0_io_out_bits_result),
-    .io_out_bits_ctrl_rm        (_mul0_io_out_bits_ctrl_rm),
-    .io_out_bits_ctrl_bypass    (_mul0_io_out_bits_ctrl_bypass),
-    .io_out_bits_ctrl_bypassVal (_mul0_io_out_bits_ctrl_bypassVal)
-  );
-  DecomposeFP32 decompose (	// src/scala/EXPFP32.scala:449:25
+  DecomposeFP32 decompose (	// src/scala/EX2FP32.scala:448:25
     .clock                      (clock),
     .reset                      (reset),
     .io_in_ready                (_decompose_io_in_ready),
-    .io_in_valid                (_mul0_io_out_valid),	// src/scala/EXPFP32.scala:434:20
-    .io_in_bits_y               (_mul0_io_out_bits_result),	// src/scala/EXPFP32.scala:434:20
-    .io_in_bits_ctrl_rm         (_mul0_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:434:20
-    .io_in_bits_ctrl_bypass     (_mul0_io_out_bits_ctrl_bypass),	// src/scala/EXPFP32.scala:434:20
-    .io_in_bits_ctrl_bypassVal  (_mul0_io_out_bits_ctrl_bypassVal),	// src/scala/EXPFP32.scala:434:20
-    .io_out_ready               (_cma0_io_in_ready),	// src/scala/EXPFP32.scala:465:22
+    .io_in_valid                (_filter_io_out_valid),	// src/scala/EX2FP32.scala:422:22
+    .io_in_bits_y               (_filter_io_out_bits_out),	// src/scala/EX2FP32.scala:422:22
+    .io_in_bits_ctrl_rm         (_filter_io_out_bits_ctrl_rm),	// src/scala/EX2FP32.scala:422:22
+    .io_in_bits_ctrl_bypass     (_filter_io_out_bits_bypass),	// src/scala/EX2FP32.scala:422:22
+    .io_in_bits_ctrl_bypassVal  (_filter_io_out_bits_bypassVal),	// src/scala/EX2FP32.scala:422:22
+    .io_out_ready               (_cma0_io_in_ready),	// src/scala/EX2FP32.scala:464:22
     .io_out_valid               (_decompose_io_out_valid),
     .io_out_bits_yi             (_decompose_io_out_bits_yi),
     .io_out_bits_yfi            (_decompose_io_out_bits_yfi),
@@ -6472,20 +6197,20 @@ module EXPFP32(	// src/scala/EXPFP32.scala:407:7
     .io_out_bits_ctrl_bypass    (_decompose_io_out_bits_ctrl_bypass),
     .io_out_bits_ctrl_bypassVal (_decompose_io_out_bits_ctrl_bypassVal)
   );
-  CMAFP32 cma0 (	// src/scala/EXPFP32.scala:465:22
+  CMAFP32 cma0 (	// src/scala/EX2FP32.scala:464:22
     .clock                      (clock),
     .reset                      (reset),
     .io_in_ready                (_cma0_io_in_ready),
-    .io_in_valid                (_decompose_io_out_valid),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_a               (_decompose_io_out_bits_yfj),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_rm              (_decompose_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_ctrl_rm         (_decompose_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_ctrl_bypass     (_decompose_io_out_bits_ctrl_bypass),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_ctrl_bypassVal  (_decompose_io_out_bits_ctrl_bypassVal),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_ctrl_yi         (_decompose_io_out_bits_yi),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_ctrl_yfi        (_decompose_io_out_bits_yfi),	// src/scala/EXPFP32.scala:449:25
-    .io_in_bits_ctrl_yfj        (_decompose_io_out_bits_yfj),	// src/scala/EXPFP32.scala:449:25
-    .io_out_ready               (_cma1_io_in_ready),	// src/scala/EXPFP32.scala:485:20
+    .io_in_valid                (_decompose_io_out_valid),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_a               (_decompose_io_out_bits_yfj),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_rm              (_decompose_io_out_bits_ctrl_rm),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_ctrl_rm         (_decompose_io_out_bits_ctrl_rm),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_ctrl_bypass     (_decompose_io_out_bits_ctrl_bypass),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_ctrl_bypassVal  (_decompose_io_out_bits_ctrl_bypassVal),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_ctrl_yi         (_decompose_io_out_bits_yi),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_ctrl_yfi        (_decompose_io_out_bits_yfi),	// src/scala/EX2FP32.scala:448:25
+    .io_in_bits_ctrl_yfj        (_decompose_io_out_bits_yfj),	// src/scala/EX2FP32.scala:448:25
+    .io_out_ready               (_cma1_io_in_ready),	// src/scala/EX2FP32.scala:484:20
     .io_out_valid               (_cma0_io_out_valid),
     .io_out_bits_result         (_cma0_io_out_bits_result),
     .io_out_bits_ctrl_rm        (_cma0_io_out_bits_ctrl_rm),
@@ -6495,20 +6220,20 @@ module EXPFP32(	// src/scala/EXPFP32.scala:407:7
     .io_out_bits_ctrl_yfi       (_cma0_io_out_bits_ctrl_yfi),
     .io_out_bits_ctrl_yfj       (_cma0_io_out_bits_ctrl_yfj)
   );
-  CMAFP32LUTParallel cma1 (	// src/scala/EXPFP32.scala:485:20
+  CMAFP32LUTParallel cma1 (	// src/scala/EX2FP32.scala:484:20
     .clock                      (clock),
     .reset                      (reset),
     .io_in_ready                (_cma1_io_in_ready),
-    .io_in_valid                (_cma0_io_out_valid),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_a               (_cma0_io_out_bits_ctrl_yfj),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_b               (_cma0_io_out_bits_result),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_index           (_cma0_io_out_bits_ctrl_yfi),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_rm              (_cma0_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_ctrl_rm         (_cma0_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_ctrl_bypass     (_cma0_io_out_bits_ctrl_bypass),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_ctrl_bypassVal  (_cma0_io_out_bits_ctrl_bypassVal),	// src/scala/EXPFP32.scala:465:22
-    .io_in_bits_ctrl_yi         (_cma0_io_out_bits_ctrl_yi),	// src/scala/EXPFP32.scala:465:22
-    .io_out_ready               (_mul1_io_in_ready),	// src/scala/EXPFP32.scala:503:20
+    .io_in_valid                (_cma0_io_out_valid),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_a               (_cma0_io_out_bits_ctrl_yfj),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_b               (_cma0_io_out_bits_result),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_index           (_cma0_io_out_bits_ctrl_yfi),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_rm              (_cma0_io_out_bits_ctrl_rm),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_ctrl_rm         (_cma0_io_out_bits_ctrl_rm),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_ctrl_bypass     (_cma0_io_out_bits_ctrl_bypass),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_ctrl_bypassVal  (_cma0_io_out_bits_ctrl_bypassVal),	// src/scala/EX2FP32.scala:464:22
+    .io_in_bits_ctrl_yi         (_cma0_io_out_bits_ctrl_yi),	// src/scala/EX2FP32.scala:464:22
+    .io_out_ready               (_mul1_io_in_ready),	// src/scala/EX2FP32.scala:502:20
     .io_out_valid               (_cma1_io_out_valid),
     .io_out_bits_result         (_cma1_io_out_bits_result),
     .io_out_bits_value          (_cma1_io_out_bits_value),
@@ -6517,25 +6242,25 @@ module EXPFP32(	// src/scala/EXPFP32.scala:407:7
     .io_out_bits_ctrl_bypassVal (_cma1_io_out_bits_ctrl_bypassVal),
     .io_out_bits_ctrl_yi        (_cma1_io_out_bits_ctrl_yi)
   );
-  MULFP32_3 mul1 (	// src/scala/EXPFP32.scala:503:20
+  MULFP32_2 mul1 (	// src/scala/EX2FP32.scala:502:20
     .clock                      (clock),
     .reset                      (reset),
     .io_in_ready                (_mul1_io_in_ready),
-    .io_in_valid                (_cma1_io_out_valid),	// src/scala/EXPFP32.scala:485:20
-    .io_in_bits_a               (_cma1_io_out_bits_result),	// src/scala/EXPFP32.scala:485:20
-    .io_in_bits_b               (_cma1_io_out_bits_value),	// src/scala/EXPFP32.scala:485:20
-    .io_in_bits_rm              (_cma1_io_out_bits_ctrl_rm),	// src/scala/EXPFP32.scala:485:20
-    .io_in_bits_ctrl_bypass     (_cma1_io_out_bits_ctrl_bypass),	// src/scala/EXPFP32.scala:485:20
-    .io_in_bits_ctrl_bypassVal  (_cma1_io_out_bits_ctrl_bypassVal),	// src/scala/EXPFP32.scala:485:20
-    .io_in_bits_ctrl_yi         (_cma1_io_out_bits_ctrl_yi),	// src/scala/EXPFP32.scala:485:20
-    .io_out_ready               (s18_ready),	// src/scala/EXPFP32.scala:28:43
+    .io_in_valid                (_cma1_io_out_valid),	// src/scala/EX2FP32.scala:484:20
+    .io_in_bits_a               (_cma1_io_out_bits_result),	// src/scala/EX2FP32.scala:484:20
+    .io_in_bits_b               (_cma1_io_out_bits_value),	// src/scala/EX2FP32.scala:484:20
+    .io_in_bits_rm              (_cma1_io_out_bits_ctrl_rm),	// src/scala/EX2FP32.scala:484:20
+    .io_in_bits_ctrl_bypass     (_cma1_io_out_bits_ctrl_bypass),	// src/scala/EX2FP32.scala:484:20
+    .io_in_bits_ctrl_bypassVal  (_cma1_io_out_bits_ctrl_bypassVal),	// src/scala/EX2FP32.scala:484:20
+    .io_in_bits_ctrl_yi         (_cma1_io_out_bits_ctrl_yi),	// src/scala/EX2FP32.scala:484:20
+    .io_out_ready               (s18_ready),	// src/scala/EX2FP32.scala:27:43
     .io_out_valid               (_mul1_io_out_valid),
     .io_out_bits_result         (_mul1_io_out_bits_result),
     .io_out_bits_ctrl_bypass    (_mul1_io_out_bits_ctrl_bypass),
     .io_out_bits_ctrl_bypassVal (_mul1_io_out_bits_ctrl_bypassVal),
     .io_out_bits_ctrl_yi        (_mul1_io_out_bits_ctrl_yi)
   );
-  assign io_out_valid = s18Pipe_rValid;	// src/scala/EXPFP32.scala:25:29, :407:7
-  assign io_out_bits_out = s18Pipe_rBits_out;	// src/scala/EXPFP32.scala:26:25, :407:7
+  assign io_out_valid = s18Pipe_rValid;	// src/scala/EX2FP32.scala:24:29, :406:7
+  assign io_out_bits_out = s18Pipe_rBits_out;	// src/scala/EX2FP32.scala:25:25, :406:7
 endmodule
 

@@ -1,4 +1,4 @@
-#include <VEXPFP32.h>
+#include <VEX2FP32.h>
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
@@ -11,12 +11,12 @@
 #define CONFIG_WAVE_TRACE
 
 #ifdef __USE_GPU_REF__
-extern "C" void exp_nvidia_batch(float *vin, float *golden, int n);
+extern "C" void ex2_nvidia_batch(float *vin, float *golden, int n);
 #endif
 
 static VerilatedContext *contextp = NULL;
 static VerilatedFstC *tfp = NULL;
-static VEXPFP32 *top = NULL;
+static VEX2FP32 *top = NULL;
 static uint64_t cycle_count = 0;
 #define RESET (top->reset)
 #define CLOCK (top->clock)
@@ -46,7 +46,7 @@ void reset(int n) {
 
 void sim_init() {
   contextp = new VerilatedContext;
-  top = new VEXPFP32{contextp};
+  top = new VEX2FP32{contextp};
 #ifdef CONFIG_WAVE_TRACE
   tfp = new VerilatedFstC;
   contextp->traceEverOn(true);
@@ -66,13 +66,13 @@ void sim_exit() {
 }
 
 #ifdef __USE_GPU_REF__
-float exp_reference(float x) {
+float ex2_reference(float x) {
   float result;
-  exp_nvidia_batch(&x, &result, 1);
+  ex2_nvidia_batch(&x, &result, 1);
   return result;
 }
 #else
-float exp_reference(float x) { return expf(x); }
+float ex2_reference(float x) { return exp2f(x); }
 #endif
 
 uint64_t compute_ulp(float golden, float hardware) {
@@ -121,18 +121,18 @@ static void test_random_cases() {
   }
 
 #ifdef __USE_GPU_REF__
-  exp_nvidia_batch(vin, golden, N);
+  ex2_nvidia_batch(vin, golden, N);
 #else
   for (i = 0; i < N; i++) {
-    golden[i] = exp_reference(vin[i]);
+    golden[i] = ex2_reference(vin[i]);
   }
 #endif
 
-  printf("=== Random EXP Tests ===\n");
+  printf("=== Random EX2 Tests ===\n");
 #ifdef __USE_GPU_REF__
   printf("Reference: NVIDIA GPU SFU\n");
 #else
-  printf("Reference: CPU expf\n");
+  printf("Reference: CPU exp2f\n");
 #endif
   printf("%13s %13s %13s %13s %13s\n", "Input", "Golden", "Hardware", "Error",
          "ULP");
@@ -207,11 +207,11 @@ static void test_random_cases() {
 }
 
 static void test_special_cases() {
-  printf("\n=== Special EXP Tests (Extended) ===\n");
+  printf("\n=== Special EX2 Tests (Extended) ===\n");
 #ifdef __USE_GPU_REF__
   printf("Reference: NVIDIA GPU SFU\n");
 #else
-  printf("Reference: CPU expf\n");
+  printf("Reference: CPU exp2f\n");
 #endif
   printf("%13s %13s %13s %13s %13s\n", "Input", "Golden", "Hardware", "Error",
          "ULP");
@@ -232,10 +232,10 @@ static void test_special_cases() {
   float vout[N];
 
 #ifdef __USE_GPU_REF__
-  exp_nvidia_batch(vin, golden, N);
+  ex2_nvidia_batch(vin, golden, N);
 #else
   for (int i = 0; i < N; i++) {
-    golden[i] = exp_reference(vin[i]);
+    golden[i] = ex2_reference(vin[i]);
   }
 #endif
 
@@ -304,11 +304,11 @@ static void test_special_cases() {
 }
 
 int main() {
-  printf("Initializing EXP simulation...\n");
+  printf("Initializing EX2 simulation...\n");
 #ifdef __USE_GPU_REF__
   printf("Using NVIDIA GPU SFU as reference\n\n");
 #else
-  printf("Using CPU expf as reference\n\n");
+  printf("Using CPU exp2f as reference\n\n");
 #endif
   sim_init();
   srand(time(NULL));
