@@ -1,3 +1,5 @@
 build/
 out/
 .nvim/
+EDA_tool
+EDA_tool/*
