@@ -1,19 +1,25 @@
 VERILATOR = verilator
-NVCC = nvcc
+NVCC      = nvcc
+
+TOPNAME   = EXP2FP32
+
 VERILATOR_FLAGS = -MMD --build -cc --x-assign fast --x-initial fast --noassert --quiet-exit --trace --trace-fst
-TOPNAME = EXPFP32
+
 BUILD_DIR = build
-OBJ_DIR = $(BUILD_DIR)/obj_dir
-TARGET = $(BUILD_DIR)/$(TOPNAME)_sim
-VSRC = rtl/$(TOPNAME).sv
-CSRC = sim-verilator/$(TOPNAME).cpp
-CUDA_SRC = sim-verilator/$(TOPNAME)_cuda.cu
-CUDA_OBJ = $(BUILD_DIR)/$(TOPNAME)_cuda.o
+OBJ_DIR   = $(BUILD_DIR)/obj_dir
+TARGET    = $(BUILD_DIR)/$(TOPNAME)_sim
+
+VSRC      = rtl/$(TOPNAME).sv
+CSRC      = sim-verilator/$(TOPNAME).cpp
+CUDA_SRC  = sim-verilator/$(TOPNAME)_cuda.cu
 SCALA_SRC = src/scala/$(TOPNAME).scala
 
-USE_GPU_REF = 1
+CUDA_OBJ  = $(BUILD_DIR)/$(TOPNAME)_cuda.o
 
-ifeq ($(USE_GPU_REF), 1)
+# Auto-detect CUDA availability
+CUDA_AVAILABLE := $(shell which nvcc > /dev/null 2>&1 && echo 1 || echo 0)
+
+ifeq ($(CUDA_AVAILABLE), 1)
 	CUDA_PATH ?= /opt/cuda
 	CXXFLAGS = -D__USE_GPU_REF__
 	LDFLAGS = -L$(CUDA_PATH)/lib64 -lcudart $(abspath $(CUDA_OBJ))
@@ -32,7 +38,7 @@ $(CUDA_OBJ): $(CUDA_SRC)
 
 $(TARGET): $(VSRC) $(CSRC)
 	@mkdir -p $(OBJ_DIR)
-ifeq ($(USE_GPU_REF), 1)
+ifeq ($(CUDA_AVAILABLE), 1)
 	@$(MAKE) $(CUDA_OBJ)
 endif
 	$(VERILATOR) $(VERILATOR_FLAGS) $(VSRC) $(CSRC) -Mdir $(OBJ_DIR) --exe -o $(abspath $(TARGET))

@@ -35,7 +35,7 @@ object EXPFP32 extends HasChisel {
   def moduleDeps = Seq(fudian)
 }
 
-object EX2FP32 extends HasChisel {
+object EXP2FP32 extends HasChisel {
   override def sources = T.sources(os.pwd / "src" / "scala")
   override def resources = T.sources(os.pwd / "src" / "resources")
 

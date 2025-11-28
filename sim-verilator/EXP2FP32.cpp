@@ -1,4 +1,4 @@
-#include <VEX2FP32.h>
+#include <VEXP2FP32.h>
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
@@ -11,12 +11,12 @@
 #define CONFIG_WAVE_TRACE
 
 #ifdef __USE_GPU_REF__
-extern "C" void ex2_nvidia_batch(float *vin, float *golden, int n);
+extern "C" void exp2_nvidia_batch(float *vin, float *golden, int n);
 #endif
 
 static VerilatedContext *contextp = NULL;
 static VerilatedFstC *tfp = NULL;
-static VEX2FP32 *top = NULL;
+static VEXP2FP32 *top = NULL;
 static uint64_t cycle_count = 0;
 #define RESET (top->reset)
 #define CLOCK (top->clock)
@@ -46,7 +46,7 @@ void reset(int n) {
 
 void sim_init() {
   contextp = new VerilatedContext;
-  top = new VEX2FP32{contextp};
+  top = new VEXP2FP32{contextp};
 #ifdef CONFIG_WAVE_TRACE
   tfp = new VerilatedFstC;
   contextp->traceEverOn(true);
@@ -71,7 +71,7 @@ void compute_reference(float *vin, float *cpu_ref, float *gpu_ref, int n) {
   }
 
 #ifdef __USE_GPU_REF__
-  ex2_nvidia_batch(vin, gpu_ref, n);
+  exp2_nvidia_batch(vin, gpu_ref, n);
 #else
   for (int i = 0; i < n; i++) {
     gpu_ref[i] = cpu_ref[i];
@@ -238,7 +238,7 @@ static void test_random_cases() {
     vin[i] = in;
   }
 
-  printf("=== Random EX2 Tests ===\n");
+  printf("=== Random EXP2 Tests ===\n");
   printf("Computing reference values...\n");
   compute_reference(vin, cpu_ref, gpu_ref, N);
 
@@ -274,7 +274,7 @@ static void test_special_cases() {
   float gpu_ref[N];
   float dut[N];
 
-  printf("\n=== Special EX2 Tests ===\n");
+  printf("\n=== Special EXP2 Tests ===\n");
   printf("Computing reference values...\n");
   compute_reference(vin, cpu_ref, gpu_ref, N);
 
@@ -288,7 +288,7 @@ static void test_special_cases() {
 }
 
 int main() {
-  printf("Initializing EX2 simulation...\n");
+  printf("Initializing EXP2 simulation...\n");
   printf("References: CPU exp2f");
 #ifdef __USE_GPU_REF__
   printf(" + NVIDIA GPU SFU");

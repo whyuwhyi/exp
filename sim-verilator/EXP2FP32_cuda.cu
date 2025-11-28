@@ -1,13 +1,13 @@
 #include <cuda_runtime.h>
 
-__global__ void ex2_kernel(float *in, float *out, int n) {
+__global__ void exp2_kernel(float *in, float *out, int n) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < n) {
     out[idx] = exp2f(in[idx]);
   }
 }
 
-extern "C" void ex2_nvidia_batch(float *vin, float *golden, int n) {
+extern "C" void exp2_nvidia_batch(float *vin, float *golden, int n) {
   float *d_in, *d_out;
   cudaMalloc(&d_in, n * sizeof(float));
   cudaMalloc(&d_out, n * sizeof(float));
@@ -15,7 +15,7 @@ extern "C" void ex2_nvidia_batch(float *vin, float *golden, int n) {
 
   int blockSize = 256;
   int gridSize = (n + blockSize - 1) / blockSize;
-  ex2_kernel<<<gridSize, blockSize>>>(d_in, d_out, n);
+  exp2_kernel<<<gridSize, blockSize>>>(d_in, d_out, n);
   cudaDeviceSynchronize();
 
   cudaMemcpy(golden, d_out, n * sizeof(float), cudaMemcpyDeviceToHost);

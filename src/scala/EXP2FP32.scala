@@ -5,7 +5,7 @@ import chisel3.util._
 import fudian.{FCMA_ADD_s1, FCMA_ADD_s2, FMUL_s1, FMUL_s2, FMUL_s3, FMULToFADD, RawFloat}
 import fudian.utils.Multiplier
 
-object EX2FP32Parameters {
+object EXP2FP32Parameters {
   val C0        = "h3F800000".U(32.W)
   val C1        = "h3F317218".U(32.W)
   val C2        = "h3E75FDF0".U(32.W)
@@ -16,7 +16,7 @@ object EX2FP32Parameters {
   val NAN       = "h7FC00000".U(32.W)
 }
 
-object EX2FP32Utils {
+object EXP2FP32Utils {
   implicit class DecoupledPipe[T <: Data](val decoupledBundle: DecoupledIO[T]) extends AnyVal {
     def handshakePipeIf(en: Boolean): DecoupledIO[T] = {
       if (en) {
@@ -43,7 +43,7 @@ object EX2FP32Utils {
   }
 }
 
-import EX2FP32Utils._
+import EXP2FP32Utils._
 
 // All module are not designed for resue
 // I have no choice how to pass ctrl signals and bypass signals
@@ -374,21 +374,21 @@ class FilterFP32[T <: Bundle](ctrlSignals: Bundle) extends Module {
   val isInfNeg = (e === "hFF".U) && (f === 0.U) && (s === 1.U)
   val isNaN    = (e === "hFF".U) && (f =/= 0.U)
 
-  val tooBig = (!s) && (io.in.bits.in > EX2FP32Parameters.MAX_INPUT) // +88.7
-  val tooNeg =   s  && (io.in.bits.in > EX2FP32Parameters.MIN_INPUT) // -87.3
+  val tooBig = (!s) && (io.in.bits.in > EXP2FP32Parameters.MAX_INPUT) // +88.7
+  val tooNeg =   s  && (io.in.bits.in > EXP2FP32Parameters.MIN_INPUT) // -87.3
 
   val bypass = isNaN || isInfPos || isInfNeg || tooBig || tooNeg
 
   val bypassVal   = Wire(UInt(32.W))
 
   when (isNaN) {
-    bypassVal   := EX2FP32Parameters.NAN
+    bypassVal   := EXP2FP32Parameters.NAN
   }.elsewhen (isInfPos || tooBig) {
-    bypassVal   := EX2FP32Parameters.INF
+    bypassVal   := EXP2FP32Parameters.INF
   }.elsewhen (isInfNeg || tooNeg) {
-    bypassVal   := EX2FP32Parameters.ZERO
+    bypassVal   := EXP2FP32Parameters.ZERO
   }.otherwise {
-    bypassVal   := EX2FP32Parameters.ZERO
+    bypassVal   := EXP2FP32Parameters.ZERO
   }
 
   val s1     = Wire(Decoupled(new OutBundle))
@@ -403,7 +403,7 @@ class FilterFP32[T <: Bundle](ctrlSignals: Bundle) extends Module {
   io.out <> s1Pipe
 }
 
-class EX2FP32 extends Module {
+class EXP2FP32 extends Module {
   class InBundle extends Bundle {
     val in = UInt(32.W)
     val rm = UInt(3.W)
@@ -434,7 +434,7 @@ class EX2FP32 extends Module {
   // filter.io.out.ready            := mul0.io.in.ready
   // mul0.io.in.valid               := filter.io.out.valid
   // mul0.io.in.bits.a              := filter.io.out.bits.out
-  // mul0.io.in.bits.b              := EX2FP32Parameters.LOG2E
+  // mul0.io.in.bits.b              := EXP2FP32Parameters.LOG2E
   // mul0.io.in.bits.rm             := filter.io.out.bits.ctrl.rm
   // mul0.io.in.bits.ctrl.rm        := filter.io.out.bits.ctrl.rm
   // mul0.io.in.bits.ctrl.bypass    := filter.io.out.bits.bypass
@@ -465,8 +465,8 @@ class EX2FP32 extends Module {
   decompose.io.out.ready         := cma0.io.in.ready
   cma0.io.in.valid               := decompose.io.out.valid
   cma0.io.in.bits.a              := decompose.io.out.bits.yfj
-  cma0.io.in.bits.b              := EX2FP32Parameters.C2
-  cma0.io.in.bits.c              := EX2FP32Parameters.C1
+  cma0.io.in.bits.b              := EXP2FP32Parameters.C2
+  cma0.io.in.bits.c              := EXP2FP32Parameters.C1
   cma0.io.in.bits.rm             := decompose.io.out.bits.ctrl.rm
   cma0.io.in.bits.ctrl.rm        := decompose.io.out.bits.ctrl.rm
   cma0.io.in.bits.ctrl.bypass    := decompose.io.out.bits.ctrl.bypass
@@ -486,7 +486,7 @@ class EX2FP32 extends Module {
   cma1.io.in.valid               := cma0.io.out.valid
   cma1.io.in.bits.a              := cma0.io.out.bits.ctrl.yfj
   cma1.io.in.bits.b              := cma0.io.out.bits.result
-  cma1.io.in.bits.c              := EX2FP32Parameters.C0
+  cma1.io.in.bits.c              := EXP2FP32Parameters.C0
   cma1.io.in.bits.index          := cma0.io.out.bits.ctrl.yfi
   cma1.io.in.bits.rm             := cma0.io.out.bits.ctrl.rm
   cma1.io.in.bits.ctrl.rm        := cma0.io.out.bits.ctrl.rm
@@ -530,9 +530,9 @@ class EX2FP32 extends Module {
   io.out <> s18Pipe
 }
 
-object EX2FP32Gen extends App {
+object EXP2FP32Gen extends App {
   ChiselStage.emitSystemVerilogFile(
-    new EX2FP32,
+    new EXP2FP32,
     Array("--target-dir","rtl"),
     Array("-lowering-options=disallowLocalVariables")
   )

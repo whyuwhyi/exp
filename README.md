@@ -7,7 +7,7 @@ A high-performance hardware implementation of the exponential function (exp and 
 This project implements two main designs:
 
 - **EXPFP32**: Computes `exp(x)` for FP32 inputs
-- **EX2FP32**: Computes `2^x` for FP32 inputs
+- **EXP2FP32**: Computes `2^x` for FP32 inputs
 
 Both designs use a pipelined architecture combining lookup tables (LUT) and polynomial approximation to achieve efficient hardware implementation with high accuracy.
 
@@ -85,7 +85,7 @@ S5: Result Composition
 
 Verification against NVIDIA GPU reference (RTX 5060) on 1,000,000 test cases:
 
-### EX2FP32 (2^x implementation)
+### EXP2FP32 (2^x implementation)
 
 ```
 Total: 1,000,000 test cases
@@ -150,8 +150,8 @@ This will initialize the XiangShan Fudian submodule.
 # Generate EXPFP32 RTL
 ./mill --no-server EXPFP32.run
 
-# Generate EX2FP32 RTL
-./mill --no-server EX2FP32.run
+# Generate EXP2FP32 RTL
+./mill --no-server EXP2FP32.run
 ```
 
 The generated SystemVerilog will be placed in `rtl/EXPFP32.sv` or `rtl/EXPFP32.sv`.
@@ -205,7 +205,7 @@ When both references are available, error statistics are computed against both t
 
 ## Future Improvements
 
-- [ ] Improve EX2FP32 accuracy (target < 1 ULP)
+- [ ] Improve EXP2FP32 accuracy (target < 1 ULP)
 - [ ] Optimize polynomial coefficients using Remez algorithm
 - [ ] Add configurable rounding mode support
 - [ ] Implement denormal number handling

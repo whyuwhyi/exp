@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Plot EX2 test results from random_cases.csv
+Plot EXP2 test results from random_cases.csv
 
 Usage:
     python plot_results.py [options]
 
 Options:
     --input FILE        Input CSV file (default: build/random_cases.csv)
-    --output FILE       Output image file (default: build/ex2_plot.png)
+    --output FILE       Output image file (default: build/exp2_plot.png)
     --plot CURVES       Comma-separated list of curves to plot
                         Options: dut, cpu_ref, gpu_ref
                         Examples: dut,cpu_ref  or  dut  or  cpu_ref,gpu_ref
@@ -38,14 +38,14 @@ import numpy as np
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Plot EX2 test results',
+        description='Plot EXP2 test results',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
     parser.add_argument('--input', default='build/random_cases.csv',
                         help='Input CSV file (default: build/random_cases.csv)')
-    parser.add_argument('--output', default='build/ex2_plot.png',
-                        help='Output image file (default: build/ex2_plot.png)')
+    parser.add_argument('--output', default='build/exp2_plot.png',
+                        help='Output image file (default: build/exp2_plot.png)')
     parser.add_argument('--plot', default='dut,cpu_ref',
                         help='Comma-separated curves to plot (default: dut,cpu_ref)')
     parser.add_argument('--sample', type=int, default=100,
@@ -100,16 +100,16 @@ def main():
                    label=style.get('label', curve))
 
     plt.xlabel('Input (x)', fontsize=12)
-    plt.ylabel('ex2(x)', fontsize=12)
-    plt.title(f'EX2 Function - {", ".join([style_map.get(c, {}).get("label", c) for c in curves])}',
+    plt.ylabel('exp2(x)', fontsize=12)
+    plt.title(f'EXP2 Function - {", ".join([style_map.get(c, {}).get("label", c) for c in curves])}',
               fontsize=14)
     plt.grid(True, alpha=0.3)
     plt.legend(loc='best', fontsize=10)
 
-    # Add reference ex2 curve
+    # Add reference exp2 curve
     x_ref = np.linspace(df['in'].min(), df['in'].max(), 1000)
     y_ref = np.exp2(x_ref)
-    plt.plot(x_ref, y_ref, 'k--', alpha=0.3, linewidth=1, label='Ideal ex2(x)')
+    plt.plot(x_ref, y_ref, 'k--', alpha=0.3, linewidth=1, label='Ideal exp2(x)')
     plt.legend(loc='best', fontsize=10)
 
     plt.tight_layout()
