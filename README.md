@@ -147,28 +147,28 @@ This will initialize the XiangShan Fudian submodule.
 ### Generate SystemVerilog
 
 ```bash
+# Generate EXPFP32 RTL
+./mill --no-server EXPFP32.run
+
 # Generate EX2FP32 RTL
 ./mill --no-server EX2FP32.run
-
-# Generate EXPFP32 RTL (if needed)
-./mill --no-server EXPFP32.run
 ```
+
+The generated SystemVerilog will be placed in `rtl/EXPFP32.sv` or `rtl/EXPFP32.sv`.
 
 ### Build and Run Simulation
 
-#### CPU Reference (no GPU required)
-
 ```bash
-make USE_GPU_REF=0 run
+make run
 ```
 
-#### GPU Reference (requires NVIDIA GPU + CUDA)
+The build system automatically detects CUDA availability:
 
-```bash
-make USE_GPU_REF=1 run
-```
-
-The GPU reference provides higher performance and matches NVIDIA's hardware intrinsics.
+- **Without CUDA**: Uses CPU reference only (standard C library `expf()` or `exp2f()`)
+- **With CUDA**: Uses both CPU and GPU references simultaneously
+  - CPU Reference: Standard C library `expf()` or `exp2f()`
+  - GPU Reference: NVIDIA CUDA math library with `-use_fast_math` flag
+  - Both error statistics are computed and displayed for comparison
 
 ### Clean Build Artifacts
 
@@ -182,15 +182,26 @@ make clean
 
 Verilator-based testbench with:
 
-- Comprehensive test vector generation (1M+ test cases)
-- Special value testing (NaN, Inf, denormals)
+- Comprehensive test vector generation (1M test cases)
+- Random input generation across full FP32 range
+- Special value testing (NaN, Inf, zero, negative numbers, subnormals)
 - ULP (Unit in Last Place) error measurement
-- Waveform generation for debugging
+- Waveform generation (FST format) for debugging
 
 ### Reference Models
 
-- **CPU Reference**: Standard C library (`exp2f`, `expf`)
-- **GPU Reference**: NVIDIA CUDA intrinsics (recommended for accuracy validation)
+The testbench automatically uses available reference implementations:
+
+- **CPU Reference**: Standard C library (`expf` or `exp2f`) - always available
+- **GPU Reference**: NVIDIA CUDA math library with `-use_fast_math` - automatically enabled if CUDA is detected
+
+When both references are available, error statistics are computed against both to provide comprehensive verification.
+
+### Accuracy Metrics
+
+- **ULP Error**: Measures floating-point accuracy in terms of "units in the last place"
+- **Relative Error**: Standard floating-point error metrics
+- **Pass/Fail**: Bit-exact comparison against reference implementation
 
 ## Future Improvements
 

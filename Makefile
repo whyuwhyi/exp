@@ -1,7 +1,7 @@
 VERILATOR = verilator
 NVCC = nvcc
 VERILATOR_FLAGS = -MMD --build -cc --x-assign fast --x-initial fast --noassert --quiet-exit --trace --trace-fst
-TOPNAME = EX2FP32
+TOPNAME = EXPFP32
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 TARGET = $(BUILD_DIR)/$(TOPNAME)_sim
